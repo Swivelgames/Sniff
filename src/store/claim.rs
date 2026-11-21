@@ -1,10 +1,9 @@
-use super::{Store, document::Document};
+use super::{Store, document::Change};
 use crate::{
-	claims::Claim,
+	claims::{Claim, Claims},
 	paths::{self, Requirement, Target},
-	problem::{Code, Problem},
+	problem::Problem,
 };
-use std::{fs::TryLockError, thread, time::Duration};
 use trine::{Cancellation, NativePath};
 
 pub struct ClaimRequest {
@@ -25,6 +24,13 @@ impl ClaimRequest {
 		}
 		Ok(paths)
 	}
+
+	fn acquire(mut self, claims: &mut Claims) -> Result<(Claim, Option<Change>), Problem> {
+		let paths = self.resolve_paths()?;
+		let (claim, changed) = claims.acquire(paths, self.id.as_deref(), self.owner)?;
+		let change = changed.then(|| Change::Claim(claim.claim_id.clone()));
+		Ok((claim, change))
+	}
 }
 
 impl Store {
@@ -33,52 +39,16 @@ impl Store {
 		request: ClaimRequest,
 		cancellation: &Cancellation,
 	) -> Result<Claim, Problem> {
-		self.claim_with_wait(request, cancellation, || {
-			thread::sleep(Duration::from_millis(15))
+		self.mutate(cancellation, |claims| request.acquire(claims))
+	}
+
+	pub fn unclaim(&self, id: &str, cancellation: &Cancellation) -> Result<bool, Problem> {
+		self.mutate(cancellation, |claims| {
+			let released = claims.release(id);
+			let change = released.then(|| Change::Release(id.to_owned()));
+			Ok((released, change))
 		})
 	}
-
-	fn claim_with_wait(
-		&self,
-		mut request: ClaimRequest,
-		cancellation: &Cancellation,
-		mut wait: impl FnMut(),
-	) -> Result<Claim, Problem> {
-		let gate = self.lock_file(true)?;
-		loop {
-			check_cancellation(cancellation)?;
-			match gate.try_lock() {
-				Ok(()) => break,
-				Err(TryLockError::WouldBlock) => wait(),
-				Err(TryLockError::Error(e)) => {
-					return Err(Problem::at(
-						Code::StoreUnavailable,
-						&self.0.join("store.lock"),
-						e,
-					));
-				}
-			}
-		}
-
-		let path = self.0.join("claims.json");
-		let mut doc = Document::read(&path)?;
-		let paths = request.resolve_paths()?;
-		let (claim, changed) = doc
-			.claims
-			.acquire(paths, request.id.as_deref(), request.owner)?;
-		check_cancellation(cancellation)?;
-		if changed {
-			doc.publish(&path, Some(&claim.claim_id))?;
-		}
-		Ok(claim)
-	}
-}
-
-fn check_cancellation(cancellation: &Cancellation) -> Result<(), Problem> {
-	if cancellation.is_cancelled() {
-		return Err(Problem::new(Code::Cancelled, "Claim cancelled."));
-	}
-	Ok(())
 }
 
 #[cfg(test)]
@@ -102,16 +72,20 @@ mod tests {
 
 		let mut waited = false;
 		let problem = store
-			.claim_with_wait(request, &Cancellation::new(), || {
-				assert!(!waited);
-				waited = true;
-				std::fs::remove_file(&path).unwrap();
-				gate.unlock().unwrap();
-			})
+			.mutate_with_wait(
+				&Cancellation::new(),
+				|claims| request.acquire(claims),
+				|| {
+					assert!(!waited);
+					waited = true;
+					std::fs::remove_file(&path).unwrap();
+					gate.unlock().unwrap();
+				},
+			)
 			.unwrap_err();
 
 		assert!(waited);
-		assert!(matches!(problem.code, Code::PathUnresolved));
+		assert!(matches!(problem.code, crate::problem::Code::PathUnresolved));
 		let extra = paths::resolve(
 			paths::native(fixture.path().join("extra")),
 			Requirement::MayBeMissing,

@@ -1,10 +1,11 @@
 mod claim;
 mod document;
+mod mutation;
 
 pub use claim::ClaimRequest;
 
 use crate::{
-	claims::Overlap,
+	claims::{Claims, Overlap},
 	paths::Target,
 	problem::{Code, Problem},
 };
@@ -35,7 +36,7 @@ impl Store {
 			.map_err(|e| Problem::at(Code::StoreUnavailable, directory, e))?;
 		let store = Self(root.join(MARKER));
 		if store.present()? {
-			store.validate()?;
+			store.snapshot()?;
 			return Ok(store);
 		}
 
@@ -52,7 +53,7 @@ impl Store {
 			if !store.present()? {
 				return Err(Problem::at(Code::StoreUnavailable, &store.0, error));
 			}
-			store.validate()?;
+			store.snapshot()?;
 		}
 		Ok(store)
 	}
@@ -116,16 +117,13 @@ impl Store {
 			.map_err(|e| Problem::at(Code::StoreUnavailable, &path, e))
 	}
 
-	fn validate(&self) -> Result<(), Problem> {
+	pub fn snapshot(&self) -> Result<Claims, Problem> {
 		self.lock_file(false)?;
-		Document::read(&self.0.join("claims.json"))?;
-		Ok(())
+		Ok(Document::read(&self.0.join("claims.json"))?.claims)
 	}
 
 	pub fn overlaps(&self, requested: &Target) -> Result<Vec<Overlap>, Problem> {
-		self.lock_file(false)?;
-		let doc = Document::read(&self.0.join("claims.json"))?;
-		Ok(doc.claims.overlaps(requested, None))
+		Ok(self.snapshot()?.overlaps(requested, None))
 	}
 }
 

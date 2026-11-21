@@ -6,6 +6,19 @@ pub(super) trait HumanOutput {
 	fn text(&self) -> String;
 }
 
+/// Keep one caller-supplied value on one terminal line.
+pub(super) fn field(value: &str) -> String {
+	let mut text = String::with_capacity(value.len());
+	for ch in value.chars() {
+		if ch.is_control() || matches!(ch, '\u{2028}' | '\u{2029}') {
+			text.extend(ch.escape_default());
+		} else {
+			text.push(ch);
+		}
+	}
+	text
+}
+
 impl HumanOutput for Problem {
 	fn text(&self) -> String {
 		let mut text = self.message.clone();

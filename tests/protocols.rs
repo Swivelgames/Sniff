@@ -45,6 +45,19 @@ impl Connection {
 		}
 	}
 
+	fn initialize_mcp(&mut self) {
+		let handshake = self.request(
+			"initialize",
+			json!({
+				"protocolVersion":"2025-11-25",
+				"capabilities":{},
+				"clientInfo":{"name":"sniff-tests","version":"1"}
+			}),
+		);
+		assert_eq!(handshake["result"]["protocolVersion"], "2025-11-25");
+		self.send(json!({"jsonrpc":"2.0","method":"notifications/initialized"}));
+	}
+
 	fn send(&mut self, message: Value) {
 		writeln!(self.input, "{message}").unwrap();
 		self.input.flush().unwrap();
@@ -89,16 +102,7 @@ fn independent_hosts_observe_and_extend_the_same_cli_claim() {
 	let mut rpc = Connection::open(root, "rpc");
 	let mut mcp = Connection::open(root, "mcp");
 
-	let handshake = mcp.request(
-		"initialize",
-		json!({
-			"protocolVersion":"2025-11-25",
-			"capabilities":{},
-			"clientInfo":{"name":"sniff-tests","version":"1"}
-		}),
-	);
-	assert_eq!(handshake["result"]["protocolVersion"], "2025-11-25");
-	mcp.send(json!({"jsonrpc":"2.0","method":"notifications/initialized"}));
+	mcp.initialize_mcp();
 
 	let discovery = mcp.request("tools/list", json!({}));
 	let mut names: Vec<_> = discovery["result"]["tools"]
@@ -108,7 +112,7 @@ fn independent_hosts_observe_and_extend_the_same_cli_claim() {
 		.map(|tool| tool["name"].as_str().unwrap())
 		.collect();
 	names.sort();
-	assert_eq!(names, ["check", "claim", "init"]);
+	assert_eq!(names, ["check", "claim", "init", "list", "unclaim"]);
 
 	let workspace = json!({ "directory":root });
 	assert_eq!(rpc.rpc("init", workspace.clone())["result"], ready);
@@ -141,6 +145,36 @@ fn independent_hosts_observe_and_extend_the_same_cli_claim() {
 	assert_eq!(refused["structuredContent"], conflict);
 }
 
+#[test]
+fn list_and_unclaim_share_state_across_all_interfaces() {
+	let fixture = tempdir().unwrap();
+	let root = fixture.path();
+	cli(root, &["init"], 0);
+	let created = cli(root, &["claim", "--reserve", "one", "--reserve", "two"], 0);
+	let mut rpc = Connection::open(root, "rpc");
+	let mut mcp = Connection::open(root, "mcp");
+	mcp.initialize_mcp();
+
+	let scope = json!({ "workspace":root });
+	let expected = json!({"claims":[created]});
+	assert_eq!(cli(root, &["list"], 0), expected);
+	assert_eq!(rpc.rpc("list", scope.clone())["result"], expected);
+	assert_eq!(mcp.mcp("list", scope)["structuredContent"], expected);
+
+	let release = json!({"workspace":root, "claim_id":created["claim_id"]});
+	let released = mcp.mcp("unclaim", release.clone());
+	assert_eq!(
+		released["structuredContent"],
+		json!({"claim_id":created["claim_id"],"released":true})
+	);
+	let repeated = rpc.rpc("unclaim", release);
+	assert_eq!(
+		repeated["result"],
+		json!({"claim_id":created["claim_id"],"released":false})
+	);
+	assert_eq!(cli(root, &["list"], 0), json!({"claims":[]}));
+}
+
 #[cfg(unix)]
 #[test]
 fn absolute_targets_in_an_explicit_workspace_survive_removal_of_the_host_cwd() {
@@ -164,4 +198,36 @@ fn absolute_targets_in_an_explicit_workspace_survive_removal_of_the_host_cwd() {
 		rpc.rpc("check", check)["result"]["overlaps"][0]["claim_id"],
 		id
 	);
+}
+
+#[test]
+fn cancelling_an_rpc_release_while_the_store_is_locked_preserves_coverage() {
+	let fixture = tempdir().unwrap();
+	let root = fixture.path();
+	cli(root, &["init"], 0);
+	let claim = cli(root, &["claim", "--reserve", "mine"], 0);
+	let gate = std::fs::File::options()
+		.read(true)
+		.write(true)
+		.open(root.join(".sniff/store.lock"))
+		.unwrap();
+	gate.lock().unwrap();
+
+	let mut rpc = Connection::open(root, "rpc");
+	rpc.send(json!({"jsonrpc":"2.0","id":42,"method":"invoke",
+		"params":{"action":["unclaim"],"input":{"claim_id":claim["claim_id"]}}}));
+	// A round trip while the store is locked proves the host processed the invoke.
+	let listing = rpc.rpc("list", json!({}));
+	assert_eq!(listing["result"], json!({"claims":[claim]}));
+	rpc.send(json!({"jsonrpc":"2.0","method":"cancel","params":{"id":42}}));
+	let terminal = rpc
+		.responses
+		.recv_timeout(Duration::from_secs(10))
+		.expect("cancelled release");
+	let response: Value = serde_json::from_str(&terminal).unwrap();
+	assert_eq!(response["id"], 42);
+	assert_eq!(response["error"]["data"]["code"], "cancelled", "{response}");
+
+	gate.unlock().unwrap();
+	assert_eq!(cli(root, &["list"], 0), json!({"claims":[claim]}));
 }

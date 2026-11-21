@@ -22,6 +22,18 @@ pub struct Claim {
 pub struct Claims(Vec<Claim>);
 
 impl Claims {
+	pub fn into_records(self) -> Vec<Claim> {
+		self.0
+	}
+
+	pub fn release(&mut self, id: &str) -> bool {
+		let Some(index) = self.position(id) else {
+			return false;
+		};
+		self.0.remove(index);
+		true
+	}
+
 	pub fn validate(&self) -> Result<(), &'static str> {
 		let mut ids = HashSet::new();
 		let mut paths = Vec::new();
@@ -126,9 +138,11 @@ impl Claims {
 	}
 
 	fn find(&self, id: &str) -> Result<usize, Problem> {
-		self.0
-			.iter()
-			.position(|claim| claim.claim_id == id)
+		self.position(id)
 			.ok_or_else(|| Problem::new(Code::ClaimNotFound, format!("Claim {id} was not found.")))
+	}
+
+	fn position(&self, id: &str) -> Option<usize> {
+		self.0.iter().position(|claim| claim.claim_id == id)
 	}
 }

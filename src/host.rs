@@ -22,7 +22,7 @@ pub fn run(mut args: Vec<OsString>) -> Result<u8, Box<dyn Error>> {
 		Some("help" | "-h" | "--help" | "-V" | "--version" | "rpc" | "mcp") => {
 			let command = app
 				.cli_command()
-				.about("Check and claim paths. Use sniff <path> to check a path.")
+				.about("Coordinate filesystem claims. Use sniff <path> to check a path.")
 				.subcommand(Command::new("rpc").about("Serve JSON-RPC on stdio"))
 				.subcommand(Command::new("mcp").about("Serve MCP tools on stdio"));
 			match command.try_get_matches_from(&args) {
@@ -55,8 +55,8 @@ fn select_action(args: &mut Vec<OsString>) {
 
 	match args.get(index).and_then(|arg| arg.to_str()) {
 		Some(
-			"init" | "check" | "claim" | "rpc" | "mcp" | "help" | "-h" | "--help" | "-V"
-			| "--version",
+			"init" | "check" | "claim" | "list" | "unclaim" | "rpc" | "mcp" | "help" | "-h"
+			| "--help" | "-V" | "--version",
 		) => {
 			let action = args.remove(index);
 			args.insert(1, action);

@@ -284,6 +284,11 @@ fn unreadable_store_and_inaccessible_path_report_uncertainty() {
 		let outcome = cli(root, &["missing"], 1);
 		assert_eq!(outcome["status"], "undetermined");
 		assert_eq!(outcome["problem"]["code"], "store_unavailable");
+		assert_eq!(cli(root, &["list"], 1)["code"], "store_unavailable");
+		assert_eq!(
+			cli(root, &["unclaim", "absent"], 1)["code"],
+			"store_unavailable"
+		);
 	}
 	fs::set_permissions(&record, fs::Permissions::from_mode(0o600)).unwrap();
 }
@@ -304,6 +309,7 @@ fn non_unicode_paths_survive_acquisition_and_reopening_the_store() {
 	);
 	let path = &claim["paths"][0];
 	assert_eq!(path["platform"], "unix");
+	assert_eq!(cli(root, &["list"], 0)["claims"][0], claim);
 	let checked = cli(root, &[raw], 0);
 	assert_eq!(checked["path"], *path);
 	assert_eq!(checked["overlaps"][0]["claim_id"], claim["claim_id"]);
@@ -325,8 +331,11 @@ fn failed_publication_preserves_existing_coverage() {
 
 	fs::set_permissions(&store, fs::Permissions::from_mode(0o500)).unwrap();
 	if fs::File::create(store.join("permission-probe")).is_err() {
+		// A no-op release also works when replacing the document is impossible.
+		assert_eq!(cli(root, &["unclaim", "absent"], 0)["released"], false);
 		let problem = cli(root, &["claim", "--claim-id", id, "--reserve", "extra"], 1);
 		assert_eq!(problem["code"], "store_unavailable");
+		assert_eq!(cli(root, &["unclaim", id], 1)["code"], "store_unavailable");
 		assert_eq!(fs::read(record).unwrap(), before);
 		assert_eq!(cli(root, &["mine"], 0)["overlaps"][0]["claim_id"], id);
 		assert_eq!(cli(root, &["extra"], 0)["status"], "clear");

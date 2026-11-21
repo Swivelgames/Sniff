@@ -18,6 +18,26 @@ pub(super) struct Document {
 	pub claims: Claims,
 }
 
+pub(super) enum Change {
+	Claim(String),
+	Release(String),
+}
+
+impl Change {
+	fn id(&self) -> &str {
+		match self {
+			Self::Claim(id) | Self::Release(id) => id,
+		}
+	}
+
+	fn description(&self) -> String {
+		match self {
+			Self::Claim(id) => format!("claim {id}"),
+			Self::Release(id) => format!("release of claim {id}"),
+		}
+	}
+}
+
 impl Document {
 	pub fn empty() -> Self {
 		Self {
@@ -44,7 +64,7 @@ impl Document {
 		Ok(doc)
 	}
 
-	pub fn publish(&self, path: &Path, claim_id: Option<&str>) -> Result<(), Problem> {
+	pub fn publish(&self, path: &Path, change: Option<&Change>) -> Result<(), Problem> {
 		let mut bytes = Vec::new();
 		let format = serde_json::ser::PrettyFormatter::with_indent(b"\t");
 		let mut json = serde_json::Serializer::with_formatter(&mut bytes, format);
@@ -53,7 +73,7 @@ impl Document {
 		bytes.push(b'\n');
 
 		let written = AtomicFile::new(path, AllowOverwrite).write(|file| file.write_all(&bytes));
-		written.map_err(|cause| publication_error(path, &bytes, claim_id, cause))
+		written.map_err(|cause| publication_error(path, &bytes, change, cause))
 	}
 }
 
@@ -62,10 +82,10 @@ impl Document {
 fn publication_error(
 	path: &Path,
 	intended: &[u8],
-	claim_id: Option<&str>,
+	change: Option<&Change>,
 	cause: impl std::fmt::Display,
 ) -> Problem {
-	let Some(id) = claim_id else {
+	let Some(change) = change else {
 		return Problem::at(Code::StoreUnavailable, path, cause);
 	};
 
@@ -80,9 +100,9 @@ fn publication_error(
 	let mut problem = Problem::at(
 		Code::PublicationUncertain,
 		path,
-		format!("claim {id} {detail}: {cause}"),
+		format!("{} {detail}: {cause}", change.description()),
 	);
-	problem.claim_id = Some(id.to_owned());
+	problem.claim_id = Some(change.id().to_owned());
 	problem
 }
 
@@ -95,14 +115,34 @@ mod tests {
 		let dir = tempfile::tempdir().unwrap();
 		let path = dir.path().join("claims.json");
 		fs::write(&path, "previous").unwrap();
-		let before = publication_error(&path, b"updated", Some("id"), "write failed");
+		let before = publication_error(
+			&path,
+			b"updated",
+			Some(&Change::Claim("id".into())),
+			"write failed",
+		);
 		assert!(matches!(before.code, Code::StoreUnavailable));
 		assert!(before.claim_id.is_none());
 
 		fs::write(&path, "updated").unwrap();
-		let after = publication_error(&path, b"updated", Some("id"), "directory sync failed");
+		let after = publication_error(
+			&path,
+			b"updated",
+			Some(&Change::Claim("id".into())),
+			"directory sync failed",
+		);
 		assert!(matches!(after.code, Code::PublicationUncertain));
 		assert_eq!(after.claim_id.as_deref(), Some("id"));
 		assert!(after.message.contains("is visible"));
+
+		let released = publication_error(
+			&path,
+			b"updated",
+			Some(&Change::Release("id".into())),
+			"directory sync failed",
+		);
+		assert!(matches!(released.code, Code::PublicationUncertain));
+		assert_eq!(released.claim_id.as_deref(), Some("id"));
+		assert!(released.message.contains("release of claim id is visible"));
 	}
 }

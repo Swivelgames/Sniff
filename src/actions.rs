@@ -1,7 +1,9 @@
 mod check;
 mod claim;
 mod init;
+mod list;
 mod terminal;
+mod unclaim;
 
 use serde::{Serialize, de::DeserializeOwned};
 use terminal::{HumanOutput, Terminal};
@@ -19,6 +21,8 @@ pub fn application() -> Result<Application, RegistrationError> {
 	app.register(init::entry()?)?;
 	app.register(check::entry()?)?;
 	app.register(claim::entry()?)?;
+	app.register(list::entry()?)?;
+	app.register(unclaim::entry()?)?;
 	Ok(app)
 }
 

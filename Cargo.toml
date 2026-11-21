@@ -8,6 +8,7 @@ description = "Cooperative file and directory claims"
 [dependencies]
 atomicwrites = "0.4"
 clap = { version = "4", default-features = false, features = ["std"] }
+clap_lex = "1"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

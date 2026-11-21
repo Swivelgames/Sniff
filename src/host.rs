@@ -1,6 +1,6 @@
 //! Host commands and the bare-path shorthand around Trine's action catalog.
-use crate::actions;
-use clap::{Command, error::ErrorKind};
+use crate::{actions, completion, selectors::Selectors};
+use clap::{Arg, Command, error::ErrorKind};
 use std::{error::Error, ffi::OsString};
 use trine::{
 	Cancellation,
@@ -13,50 +13,81 @@ use trine::{
 pub fn run(mut args: Vec<OsString>) -> Result<u8, Box<dyn Error>> {
 	let app = actions::application()?;
 	let output = CliViewContext::default();
+	if trine::cli::completion::requested() {
+		let bytes = completion::reply(command(&app), args);
+		output.stdout.write_all(&bytes)?;
+		return Ok(0);
+	}
 	if args.len() == 1 {
 		args.push("--help".into());
 	}
 	select_action(&mut args);
 
 	match args[1].to_str() {
-		Some("help" | "-h" | "--help" | "-V" | "--version" | "rpc" | "mcp") => {
-			let command = app
-				.cli_command()
-				.about("Coordinate filesystem claims. Use sniff <path> to check a path.")
-				.subcommand(Command::new("rpc").about("Serve JSON-RPC on stdio"))
-				.subcommand(Command::new("mcp").about("Serve MCP tools on stdio"));
-			match command.try_get_matches_from(&args) {
-				Ok(_) => serve(&app, &args),
-				Err(e)
-					if matches!(e.kind(), ErrorKind::DisplayHelp | ErrorKind::DisplayVersion) =>
-				{
-					output.stdout.write_all(e.to_string().as_bytes())?;
-					Ok(0)
-				}
-				Err(e) => Err(e.into()),
-			}
+		Some("help" | "-h" | "--help" | "-V" | "--version" | "rpc" | "mcp" | "completion") => {
+			run_host(&app, &args, &output)
 		}
 		_ => run_action(&app, args, output),
 	}
 }
 
-fn select_action(args: &mut Vec<OsString>) {
-	// Keep global-looking selectors usable before either an action or a bare path.
-	let mut index = 1;
-	while let Some(arg) = args.get(index) {
-		if arg == "--workspace" {
-			index += 2;
-		} else if arg == "--json" || arg.as_encoded_bytes().starts_with(b"--workspace=") {
-			index += 1;
-		} else {
-			break;
+fn run_host(
+	app: &Application,
+	args: &[OsString],
+	output: &CliViewContext,
+) -> Result<u8, Box<dyn Error>> {
+	let mut command = command(app);
+	let matches = match command.clone().try_get_matches_from(args) {
+		Ok(matches) => matches,
+		Err(error)
+			if matches!(
+				error.kind(),
+				ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
+			) =>
+		{
+			output.stdout.write_all(error.to_string().as_bytes())?;
+			return Ok(0);
 		}
+		Err(error) => return Err(error.into()),
+	};
+
+	if let Some(matches) = matches.subcommand_matches("completion") {
+		if json_requested(args) {
+			return Err("--json cannot be combined with completion".into());
+		}
+		let shell = matches.get_one::<String>("shell").expect("required shell");
+		let script =
+			trine::cli::completion::generate(&mut command, shell.parse().expect("validated shell"));
+		output.stdout.write_all(&script)?;
+		return Ok(0);
 	}
+
+	serve(app, args)
+}
+
+fn command(app: &Application) -> Command {
+	let shell =
+		Arg::new("shell")
+			.required(true)
+			.value_parser(["bash", "zsh", "fish", "powershell"]);
+	app.cli_command()
+		.about("Coordinate filesystem claims. Use sniff <path> to check a path.")
+		.subcommand(Command::new("rpc").about("Serve JSON-RPC on stdio"))
+		.subcommand(Command::new("mcp").about("Serve MCP tools on stdio"))
+		.subcommand(
+			Command::new("completion")
+				.about("Print shell completion registration")
+				.arg(shell),
+		)
+}
+
+fn select_action(args: &mut Vec<OsString>) {
+	let index = Selectors::read(args).action_index;
 
 	match args.get(index).and_then(|arg| arg.to_str()) {
 		Some(
-			"init" | "check" | "claim" | "list" | "unclaim" | "rpc" | "mcp" | "help" | "-h"
-			| "--help" | "-V" | "--version",
+			"init" | "check" | "claim" | "list" | "unclaim" | "completion" | "rpc" | "mcp" | "help"
+			| "-h" | "--help" | "-V" | "--version",
 		) => {
 			let action = args.remove(index);
 			args.insert(1, action);

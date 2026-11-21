@@ -48,6 +48,7 @@ pub(super) fn entry() -> Result<SniffEntry<Input, Release, Problem>, Registratio
 	let bindings = Bindings::new()
 		.positional("claim_id")
 		.option("workspace", "workspace")
-		.native_path("workspace");
+		.native_path("workspace")
+		.complete_group("claim_id", "Active claims", crate::completion::claim_ids);
 	Ok(interfaces(action, bindings))
 }

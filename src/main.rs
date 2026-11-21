@@ -1,8 +1,10 @@
 mod actions;
 mod claims;
+mod completion;
 mod host;
 mod paths;
 mod problem;
+mod selectors;
 mod store;
 
 use std::process::ExitCode;

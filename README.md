@@ -49,3 +49,16 @@ cargo fmt --check
 cargo test --all-targets --locked
 cargo clippy --all-targets --locked -- -D warnings
 ```
+
+## Shell completion
+
+Run the registration command for your shell in the current session. Add the same command to your shell profile to enable completion in future sessions.
+
+| Shell | Command |
+| --- | --- |
+| Bash | `source <(sniff completion bash)` |
+| Zsh (after `compinit`) | `source <(sniff completion zsh)` |
+| Fish | `sniff completion fish \| source` |
+| PowerShell | `sniff completion powershell \| Out-String \| Invoke-Expression` |
+
+Type `sniff unclaim ` and press Tab to see active claim IDs. Use `--workspace` to select another workspace. Path completion also works with shorthand checks and `claim --reserve`; you can type a future path directly.

@@ -1,7 +1,7 @@
 //! Host commands and the bare-path shorthand around Trine's action catalog.
 use crate::actions;
 use clap::{Command, error::ErrorKind};
-use std::{error::Error, ffi::OsString, io};
+use std::{error::Error, ffi::OsString};
 use trine::{
 	Cancellation,
 	application::{Application, CliViewContext, json::JsonResponse},
@@ -98,21 +98,9 @@ fn serve(app: &Application, args: &[OsString]) -> Result<u8, Box<dyn Error>> {
 	}
 	let shutdown = Cancellation::new();
 	if args[1] == "mcp" {
-		let (input, output) = mcp::stdio::open()?;
-		smol::block_on(mcp::serve(app, input, output, shutdown))?;
+		mcp::run_stdio(app, shutdown)?;
 	} else {
-		let (input, output) = rpc::stdio::open()?;
-		let report = smol::block_on(rpc::serve(
-			app,
-			input,
-			output,
-			rpc::Config::default(),
-			shutdown,
-			|_| {},
-		))?;
-		if let Some(failure) = report.failure {
-			return Err(io::Error::other(failure).into());
-		}
+		rpc::run_stdio(app, shutdown)?;
 	}
 	Ok(0)
 }

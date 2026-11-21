@@ -674,7 +674,7 @@ dependencies = [
 [[package]]
 name = "trine"
 version = "0.1.0"
-source = "git+ssh://git@gitlab.com/metarepo/trine.git?rev=716d4d96eb83febc0133acd8e2f88cc2082d889f#716d4d96eb83febc0133acd8e2f88cc2082d889f"
+source = "git+ssh://git@gitlab.com/metarepo/trine.git?rev=ba892a0f73f470b0413f2ca94167a632ad67d73d#ba892a0f73f470b0413f2ca94167a632ad67d73d"
 dependencies = [
  "async-channel",
  "async-io",

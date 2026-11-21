@@ -1,5 +1,11 @@
 use super::Claim;
-use crate::paths::Target;
+use crate::{
+	paths::{
+		Target,
+		names::{self, Coverage},
+	},
+	problem::Problem,
+};
 use serde::Serialize;
 use trine::NativePath;
 
@@ -21,24 +27,24 @@ pub struct Overlap {
 }
 
 impl Overlap {
-	pub(super) fn between(request: &Target, claim: &Claim, path: &NativePath) -> Option<Self> {
-		let requested = request.resolved.as_path();
-		let relation = if requested == path.as_path() {
-			Relation::Exact
-		} else if requested.starts_with(path) {
-			Relation::Covers
-		} else if path.as_path().starts_with(requested) {
-			Relation::Descendant
-		} else {
-			return None;
+	pub(super) fn between(
+		request: &Target,
+		claim: &Claim,
+		path: &NativePath,
+	) -> Result<Option<Self>, Problem> {
+		let relation = match names::compare(request.resolved.as_path(), path.as_path())? {
+			Coverage::Exact => Relation::Exact,
+			Coverage::Covers => Relation::Covers,
+			Coverage::Descendant => Relation::Descendant,
+			Coverage::Disjoint => return Ok(None),
 		};
 
-		Some(Self {
+		Ok(Some(Self {
 			requested_path: request.supplied.clone(),
 			claimed_path: path.clone(),
 			relation,
 			claim_id: claim.claim_id.clone(),
 			owner: claim.owner.clone(),
-		})
+		}))
 	}
 }

@@ -31,7 +31,13 @@ Claims persist across process exits. Copy an ID from `sniff list` and pass it to
 
 ## Filesystem coverage
 
-This slice is verified on case-sensitive Linux filesystems. On a case-insensitive volume, two spellings of an anticipated path (such as `Future` and `future`) can receive separate claim IDs. Use a case-sensitive volume for this preview. Native filename equivalence and Windows/macOS validation are scheduled for the portability increment.
+Checks and claims use the target directory’s naming rules, including when the store lives on a different volume. On a case-insensitive directory, reserving `Future` also covers `future/child` before either exists. On a case-sensitive directory these can be independent reservations. Existing stores keep their claim IDs and recorded spellings.
+
+Sniff queries the Windows directory case flag, the macOS volume case setting, and the case flags of Linux ext4 and tmpfs directories. On Linux ZFS it reads the dataset’s reported case mode. Byte-sensitive directories with a known exact-name policy can compare arbitrary native names. Where the filesystem can normalize or fold names, Sniff compares ASCII spellings and uses actual directory lookup to resolve other spellings that exist. If the relevant spellings are both missing and their equivalence cannot be established, the check returns `undetermined` and acquisition reports `path_unresolved`. Use the spelling from `sniff list` when addressing an existing reservation. Target directories need no writable probe files.
+
+For native validation, run `cargo test --locked --test portability -- --nocapture`. The suite prints the file lookup it used as an oracle. Set `SNIFF_PORTABILITY_DIR` to an existing directory to exercise a particular target volume or casefold-enabled directory. Run against both naming modes where available. The native acceptance suite requires working filename rules on the selected volume. Native Windows and macOS runtime verification is pending.
+
+Linux overlayfs and other unrecognized filesystems can return `undetermined` even for two differently named missing entries. Sniff can still recognize identical spellings and inspect or release reservations. To verify conservative refusal on a deliberately unsupported target, set `SNIFF_PORTABILITY_DIR` to that directory and run `cargo test --locked --test portability unknown_target_refuses -- --ignored --nocapture`. Run the regular suite separately on supported storage, setting `TMPDIR` there as well if needed.
 
 ## Development
 

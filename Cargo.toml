@@ -15,3 +15,13 @@ smol = "2"
 tempfile = "3"
 trine = { git = "ssh://git@gitlab.com/metarepo/trine.git", rev = "716d4d96eb83febc0133acd8e2f88cc2082d889f" }
 uuid = { version = "1", features = ["v4"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+rustix = { version = "1", features = ["fs"] }
+linux-raw-sys = { version = "0.12", features = ["general"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem", "Win32_Foundation"] }

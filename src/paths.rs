@@ -1,4 +1,6 @@
 //! Claims record resolved locations. A future path may have an ordinary missing tail.
+pub mod names;
+
 use crate::problem::{Code, Problem};
 use std::{
 	fs, io,

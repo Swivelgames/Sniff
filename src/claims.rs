@@ -1,7 +1,10 @@
 //! Coverage and conflict rules for one store. Paths have already been resolved.
 mod overlap;
 
-use crate::paths::Target;
+use crate::paths::{
+	Target,
+	names::{self, Coverage},
+};
 use crate::problem::{Code, Problem};
 pub use overlap::{Overlap, Relation};
 use serde::{Deserialize, Serialize};
@@ -65,19 +68,33 @@ impl Claims {
 		Ok(())
 	}
 
-	pub fn overlaps(&self, requested: &Target, except: Option<&str>) -> Vec<Overlap> {
+	pub fn overlaps(
+		&self,
+		requested: &Target,
+		except: Option<&str>,
+	) -> Result<Vec<Overlap>, Problem> {
 		let mut overlaps = vec![];
+		let mut uncertain = None;
 		for claim in &self.0 {
 			if Some(claim.claim_id.as_str()) == except {
 				continue;
 			}
 			for path in &claim.paths {
-				if let Some(hit) = Overlap::between(requested, claim, path) {
-					overlaps.push(hit);
+				match Overlap::between(requested, claim, path) {
+					Ok(Some(hit)) => overlaps.push(hit),
+					Ok(None) => {}
+					Err(problem) => uncertain = Some(problem),
 				}
 			}
 		}
-		overlaps
+		// A definite reservation answers a check even if another location cannot
+		// be classified. Only report "clear" when every comparison succeeded.
+		if overlaps.is_empty()
+			&& let Some(problem) = uncertain
+		{
+			return Err(problem);
+		}
+		Ok(overlaps)
 	}
 
 	/// Return the complete reservation plus whether it requires publication.
@@ -96,13 +113,21 @@ impl Claims {
 
 		let existing = id.map(|id| self.find(id)).transpose()?;
 
-		let conflicts: Vec<_> = paths
-			.iter()
-			.flat_map(|path| self.overlaps(path, id))
-			.collect();
+		let mut conflicts = Vec::new();
+		let mut uncertain = None;
+		for path in &paths {
+			match self.overlaps(path, id) {
+				Ok(hits) => conflicts.extend(hits),
+				Err(problem) => uncertain = Some(problem),
+			}
+		}
 		if !conflicts.is_empty() {
 			let mut problem = Problem::new(Code::Conflict, "Paths overlap an existing claim.");
 			problem.conflicts = conflicts;
+			return Err(problem);
+		}
+
+		if let Some(problem) = uncertain {
 			return Err(problem);
 		}
 
@@ -120,19 +145,7 @@ impl Claims {
 
 		let mut changed = false;
 		for target in paths {
-			let path = target.resolved;
-			if claim
-				.paths
-				.iter()
-				.any(|root| path.as_path().starts_with(root))
-			{
-				continue;
-			}
-			claim
-				.paths
-				.retain(|root| !root.as_path().starts_with(&path));
-			claim.paths.push(path);
-			changed = true;
+			changed |= claim.include(target.resolved)?;
 		}
 		Ok((claim.clone(), changed))
 	}
@@ -144,5 +157,29 @@ impl Claims {
 
 	fn position(&self, id: &str) -> Option<usize> {
 		self.0.iter().position(|claim| claim.claim_id == id)
+	}
+}
+
+impl Claim {
+	fn include(&mut self, path: NativePath) -> Result<bool, Problem> {
+		let mut superseded = Vec::new();
+		let mut uncertain = None;
+		for (index, root) in self.paths.iter().enumerate() {
+			match names::compare(path.as_path(), root.as_path()) {
+				Ok(Coverage::Exact | Coverage::Covers) => return Ok(false),
+				Ok(Coverage::Descendant) => superseded.push(index),
+				Ok(Coverage::Disjoint) => {}
+				Err(problem) => uncertain = Some(problem),
+			}
+		}
+		if let Some(problem) = uncertain {
+			return Err(problem);
+		}
+
+		for index in superseded.into_iter().rev() {
+			self.paths.remove(index);
+		}
+		self.paths.push(path);
+		Ok(true)
 	}
 }

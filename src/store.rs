@@ -123,7 +123,7 @@ impl Store {
 	}
 
 	pub fn overlaps(&self, requested: &Target) -> Result<Vec<Overlap>, Problem> {
-		Ok(self.snapshot()?.overlaps(requested, None))
+		self.snapshot()?.overlaps(requested, None)
 	}
 }
 

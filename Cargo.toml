@@ -1,0 +1,17 @@
+[package]
+name = "sniff"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Cooperative file and directory claims"
+
+[dependencies]
+atomicwrites = "0.4"
+clap = { version = "4", default-features = false, features = ["std"] }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+smol = "2"
+tempfile = "3"
+trine = { git = "ssh://git@gitlab.com/metarepo/trine.git", rev = "716d4d96eb83febc0133acd8e2f88cc2082d889f" }
+uuid = { version = "1", features = ["v4"] }

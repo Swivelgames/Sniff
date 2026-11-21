@@ -9,63 +9,49 @@ pub(super) fn reply(command: Command, args: Vec<OsString>) -> Vec<u8> {
 		return Vec::new();
 	};
 
-	// At the root the user may type either a subcommand or a shorthand check.
-	let command = if follows_shorthand(&command, &args) {
+	completion::respond_with(args, &cwd, |words, cursor| {
+		completion_command(command, words, cursor)
+	})
+	.unwrap_or_default()
+}
+
+fn completion_command(command: Command, words: &[OsString], cursor: usize) -> Command {
+	let command = command.mut_subcommands(|command| {
+		let init = command.get_name() == "init";
+		command.mut_args(|arg| {
+			if arg.get_long() == Some("workspace") || (init && arg.is_positional()) {
+				return arg.value_hint(ValueHint::DirPath);
+			}
+			arg
+		})
+	});
+
+	if follows_shorthand(&words[..cursor]) {
+		let check = command
+			.find_subcommand("check")
+			.expect("registered check action");
 		let globals = command
 			.get_arguments()
 			.filter(|arg| arg.is_global_set())
 			.cloned();
-		Command::new("sniff").args(globals)
-	} else {
-		command
-	};
-	let command = command
+		return check.clone().args(globals);
+	}
+
+	// Until a target is supplied, both a path and an action name are valid.
+	command
 		.arg(Arg::new("path").value_hint(ValueHint::AnyPath))
 		.arg(
 			Arg::new("workspace")
 				.long("workspace")
 				.value_hint(ValueHint::DirPath),
 		)
-		.mut_subcommands(|command| {
-			let init = command.get_name() == "init";
-			command.mut_args(|arg| {
-				if arg.get_long() == Some("workspace") || (init && arg.is_positional()) {
-					return arg.value_hint(ValueHint::DirPath);
-				}
-				arg
-			})
-		});
-	completion::respond(command, args, &cwd).unwrap_or_default()
 }
 
-/// Registration scripts pass the shell words after the protocol separator.
-fn follows_shorthand(command: &Command, args: &[OsString]) -> bool {
-	let [_, separator, words @ ..] = args else {
-		return false;
-	};
-	if separator != "--" {
-		return false;
-	}
-	let index = Selectors::read(words).action_index;
-	let cursor = std::env::var("_CLAP_COMPLETE_INDEX")
-		.ok()
-		.and_then(|s| s.parse::<usize>().ok());
-	let Some(word) = words
+fn follows_shorthand(before_cursor: &[OsString]) -> bool {
+	let index = Selectors::read(before_cursor).action_index;
+	before_cursor
 		.get(index)
-		.filter(|_| cursor.is_some_and(|cursor| index < cursor))
-	else {
-		return false;
-	};
-	// Readline may split an option assignment at '='. In that case the raw
-	// shell words cannot establish a shorthand target after a leading selector.
-	if words[..index].iter().any(|w| w == "=") || word == "=" {
-		return false;
-	}
-	word == "--"
-		|| (!word.as_encoded_bytes().starts_with(b"-")
-			&& word
-				.to_str()
-				.is_none_or(|name| command.find_subcommand(name).is_none() && name != "help"))
+		.is_some_and(|word| !crate::selectors::is_explicit_action(word))
 }
 
 pub(crate) fn claim_ids(context: &Context, prefix: &OsStr) -> Vec<Candidate> {

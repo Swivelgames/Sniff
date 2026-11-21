@@ -1,6 +1,6 @@
 //! Leading selectors are accepted before an action name or shorthand path.
 use clap_lex::OsStrExt;
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use trine::cli::completion::OptionValue;
 
 pub(crate) struct Selectors<'a> {
@@ -40,4 +40,22 @@ impl<'a> Selectors<'a> {
 			workspace,
 		}
 	}
+}
+
+/// These words select a command or a display request. Other first positionals
+/// are shorthand check targets, including a file whose name is a single dash.
+pub(crate) fn is_explicit_action(word: &OsStr) -> bool {
+	matches!(
+		word.to_str(),
+		Some(
+			"init"
+				| "check" | "claim"
+				| "list" | "unclaim"
+				| "completion"
+				| "rpc" | "mcp"
+				| "help" | "-h"
+				| "--help" | "-V"
+				| "--version"
+		)
+	)
 }

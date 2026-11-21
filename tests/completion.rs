@@ -38,7 +38,12 @@ fn scripts_paths_and_commands_work_before_initialization() {
 		);
 	}
 	assert_eq!(candidates(root, &["unc"], 1), ["unclaim"]);
-	assert!(candidates(root, &["example-file", "unc"], 2).is_empty());
+	for path in ["example-file", "-", "="] {
+		assert_eq!(
+			candidates(root, &[path, ""], 2),
+			candidates(root, &["check", path, ""], 3)
+		);
+	}
 	assert!(candidates(root, &["example-file", "--work"], 2).contains(&"--workspace".into()));
 	for words in [
 		&["exam"][..],
@@ -137,4 +142,60 @@ fn shells_receive_claim_descriptions_separately_from_ids() {
 			"{shell}"
 		);
 	}
+}
+
+#[test]
+fn bash_routes_shorthand_using_decoded_words_and_cursor() {
+	let fixture = tempfile::tempdir().unwrap();
+	let root = fixture.path();
+	let query = |line: &str, words: &[&str], cursor: usize, point: usize| {
+		let output = command(root)
+			.env("TRINE_COMPLETE", "bash")
+			.env("TRINE_COMPLETE_LINE", line)
+			.env("TRINE_COMPLETE_POINT", point.to_string())
+			.env("_CLAP_COMPLETE_INDEX", cursor.to_string())
+			.env_remove("TRINE_COMPLETE_QUOTE")
+			.env_remove("TRINE_COMPLETE_WORD")
+			.args(["--", "sniff"])
+			.args(words)
+			.output()
+			.unwrap();
+		assert!(output.status.success());
+		assert!(output.stderr.is_empty());
+		String::from_utf8(output.stdout).unwrap()
+	};
+
+	for (prefix, expected) in [("unc", ""), ("--work", "--workspace")] {
+		let shorthand = format!("sniff --workspace=. 'my file' {prefix}");
+		let explicit = format!("sniff --workspace=. check 'my file' {prefix}");
+		let result = query(
+			&shorthand,
+			&["--workspace", "=", ".", "my file", prefix],
+			5,
+			shorthand.len(),
+		);
+		assert_eq!(result, expected);
+		assert_eq!(
+			result,
+			query(
+				&explicit,
+				&["--workspace", "=", ".", "check", "my file", prefix],
+				6,
+				explicit.len()
+			)
+		);
+	}
+
+	// The word under the cursor remains open, even with later words on the line.
+	fs::write(root.join("unclaimed-file"), "").unwrap();
+	let line = "sniff --workspace=. unc --json";
+	let result = query(
+		line,
+		&["--workspace", "=", ".", "unc", "--json"],
+		4,
+		line.find(" --json").unwrap(),
+	);
+	let suggestions: Vec<_> = result.split('\u{b}').collect();
+	assert!(suggestions.contains(&"unclaim"));
+	assert!(suggestions.contains(&"unclaimed-file"));
 }

@@ -84,15 +84,14 @@ fn command(app: &Application) -> Command {
 fn select_action(args: &mut Vec<OsString>) {
 	let index = Selectors::read(args).action_index;
 
-	match args.get(index).and_then(|arg| arg.to_str()) {
-		Some(
-			"init" | "check" | "claim" | "list" | "unclaim" | "completion" | "rpc" | "mcp" | "help"
-			| "-h" | "--help" | "-V" | "--version",
-		) => {
-			let action = args.remove(index);
-			args.insert(1, action);
-		}
-		_ => args.insert(1, "check".into()),
+	if args
+		.get(index)
+		.is_some_and(|word| crate::selectors::is_explicit_action(word))
+	{
+		let action = args.remove(index);
+		args.insert(1, action);
+	} else {
+		args.insert(1, "check".into());
 	}
 }
 

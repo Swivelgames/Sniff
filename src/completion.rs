@@ -1,8 +1,8 @@
 //! Shell queries describe possible input without preparing an action.
-use crate::{paths, selectors::Selectors, store::Store};
+use crate::{claims::Claim, paths, selectors::Selectors, store::Store};
 use clap::{Arg, Command, ValueHint};
 use std::ffi::{OsStr, OsString};
-use trine::cli::completion::{self, Context, OptionValue};
+use trine::cli::completion::{self, Candidate, Context, OptionValue};
 
 pub(super) fn reply(command: Command, args: Vec<OsString>) -> Vec<u8> {
 	let Ok(cwd) = std::env::current_dir() else {
@@ -68,7 +68,7 @@ fn follows_shorthand(command: &Command, args: &[OsString]) -> bool {
 				.is_none_or(|name| command.find_subcommand(name).is_none() && name != "help"))
 }
 
-pub(crate) fn claim_ids(context: &Context, prefix: &OsStr) -> Vec<OsString> {
+pub(crate) fn claim_ids(context: &Context, prefix: &OsStr) -> Vec<Candidate> {
 	let Some(store) = selected_store(context) else {
 		return Vec::new();
 	};
@@ -79,10 +79,36 @@ pub(crate) fn claim_ids(context: &Context, prefix: &OsStr) -> Vec<OsString> {
 	claims
 		.into_records()
 		.into_iter()
-		.map(|claim| claim.claim_id)
-		.filter(|id| id.as_bytes().starts_with(prefix.as_encoded_bytes()))
-		.map(OsString::from)
+		.filter(|claim| {
+			claim
+				.claim_id
+				.as_bytes()
+				.starts_with(prefix.as_encoded_bytes())
+		})
+		.map(|claim| claim_candidate(claim, store.root()))
 		.collect()
+}
+
+fn claim_candidate(claim: Claim, root: &std::path::Path) -> Candidate {
+	let candidate = Candidate::new(claim.claim_id);
+	let Some((first, rest)) = claim.paths.split_first() else {
+		return candidate;
+	};
+
+	let path = first.as_path();
+	let relative = path.strip_prefix(root).unwrap_or(path);
+	let mut description = if relative.as_os_str().is_empty() {
+		".".to_owned()
+	} else {
+		relative.display().to_string()
+	};
+	if !rest.is_empty() {
+		description.push_str(&format!(" (+{} more)", rest.len()));
+	}
+	if let Some(owner) = claim.owner.filter(|owner| !owner.is_empty()) {
+		description = format!("{owner} · {description}");
+	}
+	candidate.description(description)
 }
 
 fn selected_store(context: &Context) -> Option<Store> {

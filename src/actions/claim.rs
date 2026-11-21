@@ -60,6 +60,10 @@ pub(super) fn entry() -> Result<SniffEntry<Input, Claim, Problem>, RegistrationE
 		.option("owner", "owner")
 		.option("workspace", "workspace")
 		.native_path("workspace")
-		.complete_group("claim_id", "Active claims", crate::completion::claim_ids);
+		.complete_candidates(
+			"claim_id",
+			Some("Active claims"),
+			crate::completion::claim_ids,
+		);
 	Ok(interfaces(action, bindings))
 }

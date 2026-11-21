@@ -95,3 +95,46 @@ fn claim_ids_follow_workspace_selection_and_disappear_after_release() {
 	cli(root, &["unclaim", id], 0);
 	assert!(candidates(root, &["unclaim", prefix], 2).is_empty());
 }
+
+#[test]
+fn shells_receive_claim_descriptions_separately_from_ids() {
+	let fixture = tempfile::tempdir().unwrap();
+	let root = fixture.path();
+	cli(root, &["init"], 0);
+	let result = cli(
+		root,
+		&[
+			"claim",
+			"--owner",
+			"alice",
+			"--reserve",
+			"api",
+			"--reserve",
+			"web",
+		],
+		0,
+	);
+	let id = result["claim_id"].as_str().unwrap();
+	let description = "alice · api (+1 more)";
+
+	for (shell, expected) in [
+		("bash", id.to_owned()),
+		("fish", format!("{id}\t{description}")),
+		("powershell", format!("{id}\t{description}")),
+		("zsh", format!("Active claims\n{id}\n{description}\n")),
+	] {
+		let output = command(root)
+			.env("TRINE_COMPLETE", shell)
+			.env("TRINE_COMPLETE_METADATA", "1")
+			.env("_CLAP_COMPLETE_INDEX", "2")
+			.args(["--", "sniff", "unclaim", id])
+			.output()
+			.unwrap();
+		assert!(output.status.success());
+		assert_eq!(
+			String::from_utf8(output.stdout).unwrap(),
+			expected,
+			"{shell}"
+		);
+	}
+}

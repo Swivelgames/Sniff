@@ -2,6 +2,8 @@
 name = "sniff"
 version = "0.1.0"
 edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Swivelgames/Sniff"
 publish = false
 description = "Cooperative file and directory claims"
 
@@ -14,7 +16,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 smol = "2"
 tempfile = "3"
-trine = { git = "ssh://git@gitlab.com/metarepo/trine.git", rev = "1164f58e633dcf4ae6072b61f9a410249273f23c" }
+trine = "=0.0.1"
 uuid = { version = "1", features = ["v4"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]

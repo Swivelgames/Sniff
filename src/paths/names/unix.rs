@@ -1,3 +1,5 @@
+//! Compare materialized directory entries using Unix filesystem observations.
+
 use std::{ffi::OsStr, fs, io, os::unix::fs::MetadataExt, path::Path};
 
 fn identity(path: &Path) -> io::Result<Option<(u64, u64)>> {

@@ -54,6 +54,7 @@ fn follows_shorthand(before_cursor: &[OsString]) -> bool {
 		.is_some_and(|word| !crate::selectors::is_explicit_action(word))
 }
 
+/// Suggest active claim IDs from the selected workspace and attach display context.
 pub(crate) fn claim_ids(context: &Context, prefix: &OsStr) -> Vec<Candidate> {
 	let Some(store) = selected_store(context) else {
 		return Vec::new();

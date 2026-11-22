@@ -1,3 +1,5 @@
+//! Read Linux filesystem and directory policies for comparing missing names.
+
 use super::Rules;
 use linux_raw_sys::general::{EXT4_SUPER_MAGIC, FS_CASEFOLD_FL, TMPFS_MAGIC};
 use rustix::fs::{fstatfs, ioctl_getflags};

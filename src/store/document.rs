@@ -11,6 +11,7 @@ use std::{
 	path::Path,
 };
 
+/// Versioned on-disk envelope for a complete claim set.
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Document {
@@ -18,6 +19,7 @@ pub(super) struct Document {
 	pub claims: Claims,
 }
 
+/// Mutation identity to report if publication cannot be confirmed.
 pub(super) enum Change {
 	Claim(String),
 	Release(String),
@@ -46,6 +48,7 @@ impl Document {
 		}
 	}
 
+	/// Decode and validate the format and claim invariants before returning coverage.
 	pub fn read(path: &Path) -> Result<Self, Problem> {
 		super::require_file(path)?;
 		let bytes = fs::read(path).map_err(|e| Problem::at(Code::StoreUnavailable, path, e))?;
@@ -64,6 +67,7 @@ impl Document {
 		Ok(doc)
 	}
 
+	/// Replace the document atomically and identify ambiguous durability failures by claim ID.
 	pub fn publish(&self, path: &Path, change: Option<&Change>) -> Result<(), Problem> {
 		let mut bytes = Vec::new();
 		let format = serde_json::ser::PrettyFormatter::with_indent(b"\t");

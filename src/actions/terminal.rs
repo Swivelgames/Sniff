@@ -1,3 +1,5 @@
+//! Render human-readable outcomes while keeping machine outputs structured.
+
 use crate::problem::Problem;
 use std::{fmt::Write, io};
 use trine::{application::CliViewContext, view::View};

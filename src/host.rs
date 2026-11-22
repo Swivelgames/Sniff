@@ -10,6 +10,7 @@ use trine::{
 	mcp, rpc,
 };
 
+/// Select completion, stdio serving or a command-line action from native arguments.
 pub fn run(mut args: Vec<OsString>) -> Result<u8, Box<dyn Error>> {
 	let app = actions::application()?;
 	let output = CliViewContext::default();

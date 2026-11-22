@@ -1,3 +1,5 @@
+//! List active reservations, their owner labels and the roots each ID covers.
+
 use super::{
 	SniffEntry, interfaces,
 	terminal::{HumanOutput, field},

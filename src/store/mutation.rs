@@ -11,6 +11,7 @@ use std::{fs::TryLockError, thread, time::Duration};
 use trine::Cancellation;
 
 impl Store {
+	/// Serialize a cancellable mutation and publish only when the callback reports a change.
 	pub(super) fn mutate<T>(
 		&self,
 		cancellation: &Cancellation,

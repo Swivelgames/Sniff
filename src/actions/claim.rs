@@ -1,3 +1,5 @@
+//! Acquire or extend one reservation using a single store transaction.
+
 use super::{SniffEntry, interfaces, terminal::HumanOutput};
 use crate::{
 	claims::Claim,

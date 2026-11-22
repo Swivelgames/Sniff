@@ -1,3 +1,5 @@
+//! Initialize a workspace and return its resolved coordination root.
+
 use super::{SniffEntry, interfaces, terminal::HumanOutput};
 use crate::{paths, problem::Problem, store::Store};
 use schemars::JsonSchema;

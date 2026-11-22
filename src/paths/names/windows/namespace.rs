@@ -1,3 +1,5 @@
+//! Resolve Windows namespace prefixes before comparing path components.
+
 use super::super::{Coverage, compare_components};
 use crate::problem::{Code, Problem};
 use std::{

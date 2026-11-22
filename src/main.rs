@@ -1,3 +1,10 @@
+//! Coordinate access to paths through cooperative, workspace-local claims.
+//!
+//! All three hosts use the same actions. A claim reserves each recorded root
+//! and its descendants until someone releases its ID. See [`claims`] for
+//! conflict rules and [`store`] for how concurrent writers publish coverage.
+#![deny(missing_docs)]
+
 mod actions;
 mod claims;
 mod completion;

@@ -1,3 +1,5 @@
+//! Release a complete claim by ID. Repeating the release succeeds.
+
 use super::{
 	SniffEntry, interfaces,
 	terminal::{HumanOutput, field},

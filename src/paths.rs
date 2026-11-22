@@ -8,17 +8,20 @@ use std::{
 };
 use trine::NativePath;
 
+/// Whether an ordinary missing path suffix is valid for this request.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Requirement {
 	Existing,
 	MayBeMissing,
 }
 
+/// The caller’s original spelling paired with the resolved path used for coverage.
 pub struct Target {
 	pub supplied: NativePath,
 	pub resolved: NativePath,
 }
 
+/// Resolve existing components through the filesystem and optionally retain a missing tail.
 pub fn resolve(input: NativePath, requirement: Requirement) -> Result<Target, Problem> {
 	let path = input.as_path();
 	if path.as_os_str().is_empty() {
@@ -98,6 +101,7 @@ pub fn resolve(input: NativePath, requirement: Requirement) -> Result<Target, Pr
 	})
 }
 
+/// Wrap an operating-system path for lossless transport through the hosts.
 pub fn native(path: PathBuf) -> NativePath {
 	NativePath::new(path).expect("filesystem paths and validated input contain no NUL")
 }

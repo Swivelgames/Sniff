@@ -1,3 +1,5 @@
+//! Read the volume case-sensitivity policy for a macOS directory.
+
 use super::Rules;
 use std::{ffi::CString, io, os::unix::ffi::OsStrExt, path::Path};
 

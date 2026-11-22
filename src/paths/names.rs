@@ -16,6 +16,7 @@ use std::{
 	path::{Component, Path, PathBuf},
 };
 
+/// Position of the recorded root relative to the requested path.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Coverage {
 	Exact,
@@ -24,6 +25,7 @@ pub enum Coverage {
 	Disjoint,
 }
 
+/// Compare resolved locations using the naming rules of the directory where they diverge.
 pub fn compare(request: &Path, recorded: &Path) -> Result<Coverage, Problem> {
 	#[cfg(windows)]
 	if request.components().next() != recorded.components().next() {

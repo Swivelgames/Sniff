@@ -1,3 +1,8 @@
+//! Discover and initialize the workspace marker, then read or update its claims.
+//!
+//! Readers see a published snapshot. Mutations hold a stable OS lock while
+//! resolving inputs, checking coverage and replacing the claim document.
+
 mod claim;
 mod document;
 mod mutation;
@@ -19,9 +24,11 @@ use trine::NativePath;
 
 const MARKER: &str = ".sniff";
 
+/// The initialized workspace marker containing the document and its persistent lock file.
 pub struct Store(PathBuf);
 
 impl Store {
+	/// Publish a complete empty store or validate the store already present.
 	pub fn initialize(directory: &Path) -> Result<Self, Problem> {
 		if directory.as_os_str().is_empty() {
 			return Err(Problem::new(
@@ -58,6 +65,7 @@ impl Store {
 		Ok(store)
 	}
 
+	/// Use an explicit workspace exactly, or search upward from the current directory.
 	pub fn discover(workspace: Option<&NativePath>) -> Result<Self, Problem> {
 		let cwd;
 		let root = match workspace {
@@ -103,6 +111,7 @@ impl Store {
 		}
 	}
 
+	/// Return the directory containing the marker.
 	pub fn root(&self) -> &Path {
 		self.0.parent().expect("marker under workspace")
 	}
@@ -117,11 +126,13 @@ impl Store {
 			.map_err(|e| Problem::at(Code::StoreUnavailable, &path, e))
 	}
 
+	/// Read and validate the published claim set without taking the writer lock.
 	pub fn snapshot(&self) -> Result<Claims, Problem> {
 		self.lock_file(false)?;
 		Ok(Document::read(&self.0.join("claims.json"))?.claims)
 	}
 
+	/// Check one resolved target against the current published snapshot.
 	pub fn overlaps(&self, requested: &Target) -> Result<Vec<Overlap>, Problem> {
 		self.snapshot()?.overlaps(requested, None)
 	}

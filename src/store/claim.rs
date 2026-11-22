@@ -1,3 +1,5 @@
+//! Resolve each requested path after writer admission, then acquire or release coverage.
+
 use super::{Store, document::Change};
 use crate::{
 	claims::{Claim, Claims},
@@ -6,6 +8,7 @@ use crate::{
 };
 use trine::{Cancellation, NativePath};
 
+/// Requested coverage, with separate resolution policies for ordinary and reserved paths.
 pub struct ClaimRequest {
 	pub existing: Vec<NativePath>,
 	pub reservations: Vec<NativePath>,
@@ -34,6 +37,7 @@ impl ClaimRequest {
 }
 
 impl Store {
+	/// Resolve and acquire all requested paths together while holding the store lock.
 	pub fn claim(
 		&self,
 		request: ClaimRequest,
@@ -42,6 +46,7 @@ impl Store {
 		self.mutate(cancellation, |claims| request.acquire(claims))
 	}
 
+	/// Release all paths of one ID and report whether the store changed.
 	pub fn unclaim(&self, id: &str, cancellation: &Cancellation) -> Result<bool, Problem> {
 		self.mutate(cancellation, |claims| {
 			let released = claims.release(id);

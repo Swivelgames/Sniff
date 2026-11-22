@@ -1,3 +1,5 @@
+//! Consult Windows directory policies and resolve materialized filename aliases.
+
 mod namespace;
 pub(super) use namespace::compare_roots;
 

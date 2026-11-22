@@ -1,7 +1,10 @@
+//! Classify failures for all hosts and retain actionable conflict evidence.
+
 use crate::claims::Overlap;
 use serde::Serialize;
 use std::{fmt::Display, path::Path};
 
+/// Stable diagnostic categories shared by the terminal and structured hosts.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Code {
@@ -16,6 +19,7 @@ pub enum Code {
 	Cancelled,
 }
 
+/// Classified failure with optional claim ID and the roots involved in a conflict.
 #[derive(Debug, Serialize)]
 pub struct Problem {
 	pub code: Code,

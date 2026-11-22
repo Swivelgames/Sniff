@@ -1,6 +1,8 @@
 # Sniff
 
-Sniff lets cooperating people and agents reserve filesystem paths in a shared workspace. A claim covers its resolved location and every descendant, including files that have yet to be created.
+**Give people and agents room to work in the same tree.** Sniff shows who has claimed a file or directory before you start editing. Reserve a whole subtree with one claim, including files you plan to create. Everyone using the same workspace can see the reservation.
+
+## Claim your first path
 
 ```sh
 sniff init
@@ -33,21 +35,16 @@ Claims persist across process exits. Copy an ID from `sniff list` and pass it to
 
 Checks and claims use the target directory’s naming rules, including when the store lives on a different volume. On a case-insensitive directory, reserving `Future` also covers `future/child` before either exists. On a case-sensitive directory these can be independent reservations. Existing stores keep their claim IDs and recorded spellings.
 
-Sniff queries the Windows directory case flag, the macOS volume case setting, and the case flags of Linux ext4 and tmpfs directories. On Linux ZFS it reads the dataset’s reported case mode. Byte-sensitive directories with a known exact-name policy can compare arbitrary native names. Where the filesystem can normalize or fold names, Sniff compares ASCII spellings and uses actual directory lookup to resolve other spellings that exist. If the relevant spellings are both missing and their equivalence cannot be established, the check returns `undetermined` and acquisition reports `path_unresolved`. Use the spelling from `sniff list` when addressing an existing reservation. Target directories need no writable probe files.
+If two missing names might be equivalent and the filesystem cannot confirm it, Sniff reports an undetermined check and refuses the claim. Use the recorded spelling from `sniff list` to address an existing reservation.
 
-For native validation, run `cargo test --locked --test portability -- --nocapture`. The suite prints the file lookup it used as an oracle. Set `SNIFF_PORTABILITY_DIR` to an existing directory to exercise a particular target volume or casefold-enabled directory. Run against both naming modes where available. The native acceptance suite requires working filename rules on the selected volume. Native Windows and macOS runtime verification is pending.
+## Build from source
 
-Linux overlayfs and other unrecognized filesystems can return `undetermined` even for two differently named missing entries. Sniff can still recognize identical spellings and inspect or release reservations. To verify conservative refusal on a deliberately unsupported target, set `SNIFF_PORTABILITY_DIR` to that directory and run `cargo test --locked --test portability unknown_target_refuses -- --ignored --nocapture`. Run the regular suite separately on supported storage, setting `TMPDIR` there as well if needed.
-
-## Development
-
-The executable uses Trine pinned to a Git revision. Building requires read access to the private Trine repository.
+With Rust and Git installed, clone and build the executable:
 
 ```sh
-export CARGO_TARGET_DIR="$PWD/target"
-cargo fmt --check
-cargo test --all-targets --locked
-cargo clippy --all-targets --locked -- -D warnings
+git clone https://github.com/Swivelgames/Sniff.git
+cd Sniff
+cargo install --locked --path .
 ```
 
 ## Shell completion
@@ -62,3 +59,7 @@ Run the registration command for your shell in the current session. Add the same
 | PowerShell | `sniff completion powershell \| Out-String \| Invoke-Expression` |
 
 Type `sniff unclaim ` and press Tab to see active claim IDs. Use `--workspace` to select another workspace. Path completion also works with shorthand checks and `claim --reserve`; you can type a future path directly.
+
+## License
+
+You may use Sniff under either the [MIT License](LICENSE-MIT) or the [Apache License, Version 2.0](LICENSE-APACHE).

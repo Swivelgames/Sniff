@@ -12,23 +12,30 @@ use std::collections::HashSet;
 use trine::NativePath;
 use uuid::Uuid;
 
+/// A reservation identified by its ID, with a minimal set of covered roots.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct Claim {
+	/// ID used to extend or release this reservation.
 	pub claim_id: String,
+	/// Optional display label supplied by the caller.
 	pub owner: Option<String>,
+	/// Resolved roots covered by this reservation, including their descendants.
 	pub paths: Vec<NativePath>,
 }
 
+/// The set of active claims in one workspace snapshot.
 #[derive(Default, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct Claims(Vec<Claim>);
 
 impl Claims {
+	/// Consume the snapshot to enumerate its claim records.
 	pub fn into_records(self) -> Vec<Claim> {
 		self.0
 	}
 
+	/// Remove every root held by the ID. Return false if the ID is already absent.
 	pub fn release(&mut self, id: &str) -> bool {
 		let Some(index) = self.position(id) else {
 			return false;
@@ -37,6 +44,7 @@ impl Claims {
 		true
 	}
 
+	/// Check stored IDs, absolute paths and component-wise overlap before trusting a snapshot.
 	pub fn validate(&self) -> Result<(), &'static str> {
 		let mut ids = HashSet::new();
 		let mut paths = Vec::new();
@@ -68,6 +76,7 @@ impl Claims {
 		Ok(())
 	}
 
+	/// Find claims covering or contained by the request, optionally excluding the claim being extended.
 	pub fn overlaps(
 		&self,
 		requested: &Target,
@@ -161,6 +170,7 @@ impl Claims {
 }
 
 impl Claim {
+	/// Fold redundant descendants into their covering root and report whether coverage changed.
 	fn include(&mut self, path: NativePath) -> Result<bool, Problem> {
 		let mut superseded = Vec::new();
 		let mut uncertain = None;

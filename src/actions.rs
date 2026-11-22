@@ -1,3 +1,5 @@
+//! Register claim operations once and bind them to terminal, JSON-RPC and MCP views.
+
 mod check;
 mod claim;
 mod init;
@@ -16,6 +18,7 @@ use trine::{
 
 type SniffEntry<I, O, E> = Entry<I, O, E, ()>;
 
+/// Build the shared action registry with the input bindings and views for each host.
 pub fn application() -> Result<Application, RegistrationError> {
 	let mut app = Application::new("sniff", env!("CARGO_PKG_VERSION"))?;
 	app.register(init::entry()?)?;

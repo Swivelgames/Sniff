@@ -1,3 +1,5 @@
+//! Read coverage for one path, including a path that does not yet exist.
+
 use super::{SniffEntry, interfaces, terminal::HumanOutput};
 use crate::{
 	claims::{Overlap, Relation},

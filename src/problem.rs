@@ -2,7 +2,10 @@
 
 use crate::claims::Overlap;
 use serde::Serialize;
-use std::{fmt::Display, path::Path};
+use std::{
+	fmt::Display,
+	path::{Path, PathBuf},
+};
 
 /// Stable diagnostic categories shared by the terminal and structured hosts.
 #[derive(Debug, Serialize)]
@@ -28,6 +31,13 @@ pub struct Problem {
 	pub conflicts: Vec<Overlap>,
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub claim_id: Option<String>,
+
+	/// Native path to display in the human diagnostic.
+	#[serde(skip)]
+	pub location: Option<PathBuf>,
+	/// An explicitly requested existing path has an ordinary missing component.
+	#[serde(skip)]
+	pub missing_target: bool,
 }
 
 impl Problem {
@@ -37,10 +47,26 @@ impl Problem {
 			message: message.into(),
 			conflicts: vec![],
 			claim_id: None,
+			location: None,
+			missing_target: false,
 		}
 	}
 
 	pub fn at(code: Code, path: &Path, cause: impl Display) -> Self {
-		Self::new(code, format!("{}: {cause}", path.display()))
+		let mut problem = Self::new(code, format!("{}: {cause}", path.display()));
+		problem.location = Some(path.to_owned());
+		problem
+	}
+
+	/// Retain the requested path for display and the failing component for diagnostics.
+	pub fn missing_path(requested: &Path, missing_component: &Path) -> Self {
+		let mut problem = Self::at(
+			Code::PathUnresolved,
+			missing_component,
+			"path does not exist; check its spelling or use --reserve",
+		);
+		problem.location = Some(requested.to_owned());
+		problem.missing_target = true;
+		problem
 	}
 }

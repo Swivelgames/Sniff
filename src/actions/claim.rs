@@ -1,6 +1,9 @@
 //! Acquire or extend one reservation using a single store transaction.
 
-use super::{SniffEntry, interfaces, terminal::HumanOutput};
+use super::{
+	SniffEntry, interfaces,
+	terminal::{HumanOutput, Render, Tone},
+};
 use crate::{
 	claims::Claim,
 	problem::Problem,
@@ -28,10 +31,13 @@ pub(super) struct Input {
 }
 
 impl HumanOutput for Claim {
-	fn text(&self) -> String {
+	fn render(&self, output: &mut Render) {
 		let count = self.paths.len();
 		let unit = if count == 1 { "path" } else { "paths" };
-		format!("Claim {} · {count} {unit}", self.claim_id)
+		let claim = output.claim_label(&self.claim_id, self.owner.as_deref());
+
+		output.status("Claim saved", Tone::Success, Some(&claim));
+		output.detail(format_args!("{count} {unit}"));
 	}
 }
 

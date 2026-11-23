@@ -76,11 +76,7 @@ pub fn resolve(input: NativePath, requirement: Requirement) -> Result<Target, Pr
 			}
 			Err(e) if e.kind() == io::ErrorKind::NotFound => {
 				if requirement == Requirement::Existing {
-					return Err(Problem::at(
-						Code::PathUnresolved,
-						&resolved,
-						"path does not exist; check its spelling or use --reserve",
-					));
+					return Err(Problem::missing_path(path, &resolved));
 				}
 			}
 			Err(e) => return Err(Problem::at(Code::PathUnresolved, &resolved, e)),

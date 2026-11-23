@@ -16,7 +16,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 smol = "2"
 tempfile = "3"
-trine = "=0.0.1"
+trine = { git = "https://github.com/Swivelgames/trine.git", rev = "92ca868ee7fd595bc30d439a7baccb5126fd56aa" }
 uuid = { version = "1", features = ["v4"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]

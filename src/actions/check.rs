@@ -1,6 +1,9 @@
 //! Read coverage for one path, including a path that does not yet exist.
 
-use super::{SniffEntry, interfaces, terminal::HumanOutput};
+use super::{
+	SniffEntry, interfaces,
+	terminal::{HumanOutput, Render, Tone},
+};
 use crate::{
 	claims::{Overlap, Relation},
 	paths::{self, Requirement},
@@ -9,7 +12,6 @@ use crate::{
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::fmt::Write;
 use trine::{Action, NativePath, RegistrationError, cli::Bindings};
 
 #[derive(Deserialize, JsonSchema)]
@@ -40,35 +42,33 @@ pub(super) struct Undetermined {
 }
 
 impl HumanOutput for Undetermined {
-	fn text(&self) -> String {
-		format!("Undetermined · {}", self.problem.text())
+	fn render(&self, output: &mut Render) {
+		self.problem
+			.render_with_heading(output, Some("Undetermined"));
 	}
 }
 
 impl HumanOutput for Check {
-	fn text(&self) -> String {
+	fn render(&self, output: &mut Render) {
 		match self {
-			Self::Clear { path } => format!("Clear · {}", path.as_path().display()),
+			Self::Clear { path } => {
+				let path = output.path(path.as_path());
+				output.status("Clear", Tone::Success, Some(&path));
+			}
 			Self::Claimed { path, overlaps } => {
-				let mut text = format!("Claimed · {}", path.as_path().display());
+				let path = output.path(path.as_path());
+				output.status("Claimed", Tone::Attention, Some(&path));
+
 				for hit in overlaps {
 					let relation = match hit.relation {
-						Relation::Exact => "exact",
-						Relation::Covers => "covered by",
-						Relation::Descendant => "contains",
+						Relation::Exact => "Exact match",
+						Relation::Covers => "Covered by",
+						Relation::Descendant => "Contains claim on",
 					};
-					write!(
-						text,
-						"\n    {relation} {} · {}",
-						hit.claimed_path.as_path().display(),
-						hit.claim_id
-					)
-					.expect("string output");
-					if let Some(owner) = &hit.owner {
-						write!(text, " ({owner})").expect("string output");
-					}
+					let path = output.path(hit.claimed_path.as_path());
+					let claim = output.claim_label(&hit.claim_id, hit.owner.as_deref());
+					output.detail(format_args!("{relation} {path} · {claim}"));
 				}
-				text
 			}
 		}
 	}

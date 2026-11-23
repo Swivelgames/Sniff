@@ -2,7 +2,7 @@
 
 use super::{
 	SniffEntry, interfaces,
-	terminal::{HumanOutput, field},
+	terminal::{HumanOutput, Render, Tone},
 };
 use crate::{problem::Problem, store::Store};
 use schemars::JsonSchema;
@@ -25,12 +25,14 @@ pub(super) struct Release {
 }
 
 impl HumanOutput for Release {
-	fn text(&self) -> String {
-		let id = field(&self.claim_id);
+	fn render(&self, output: &mut Render) {
+		let id = output.claim_id(&self.claim_id);
 		if self.released {
-			return format!("Released claim {id}.");
+			output.status("Released claim", Tone::Success, Some(&id));
+			return;
 		}
-		format!("Claim {id} is already absent.")
+
+		output.status("Claim already absent", Tone::Heading, Some(&id));
 	}
 }
 

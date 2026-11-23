@@ -2,12 +2,11 @@
 
 use super::{
 	SniffEntry, interfaces,
-	terminal::{HumanOutput, field},
+	terminal::{HumanOutput, Render},
 };
 use crate::{claims::Claim, problem::Problem, store::Store};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::fmt::Write;
 use trine::{Action, NativePath, RegistrationError, cli::Bindings};
 
 #[derive(Deserialize, JsonSchema)]
@@ -23,26 +22,22 @@ pub(super) struct Listing {
 }
 
 impl HumanOutput for Listing {
-	fn text(&self) -> String {
+	fn render(&self, output: &mut Render) {
 		if self.claims.is_empty() {
-			return "No active claims.".into();
+			output.heading("No active claims.");
+			return;
 		}
 
-		let mut text = String::new();
+		output.heading("Active claims");
+
 		for claim in &self.claims {
-			if !text.is_empty() {
-				text.push('\n');
-			}
-			text.push_str(&claim.claim_id);
-			if let Some(owner) = &claim.owner {
-				write!(text, " ({})", field(owner)).expect("string output");
-			}
+			let label = output.claim_label(&claim.claim_id, claim.owner.as_deref());
+			output.separate();
+			output.detail(format_args!("{label}"));
 			for path in &claim.paths {
-				write!(text, "\n    {}", field(&path.as_path().to_string_lossy()))
-					.expect("string output");
+				output.nested_detail(format_args!("{}", output.path(path.as_path())));
 			}
 		}
-		text
 	}
 }
 

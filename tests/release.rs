@@ -1,6 +1,6 @@
 mod support;
 
-use serde_json::{Value, json};
+use serde_json::json;
 use std::{fs, path::Path, process::Output, sync::Barrier, thread};
 use support::{cli, command, domain};
 use tempfile::tempdir;
@@ -141,7 +141,7 @@ fn terminal_groups_each_claims_paths_and_distinguishes_release_from_retry() {
 		assert!(out.stderr.is_empty());
 		String::from_utf8(out.stdout).unwrap()
 	};
-	assert_eq!(text(&["list"]), "No active claims.\n");
+	assert_eq!(text(&["list"]), "  No active claims.\n");
 	let first = cli(
 		root,
 		&[
@@ -156,22 +156,18 @@ fn terminal_groups_each_claims_paths_and_distinguishes_release_from_retry() {
 		0,
 	);
 	let next = cli(root, &["claim", "--reserve", "third"], 0);
-	let display = |path: &Value| path.as_str().unwrap().to_string();
 	let id = first["claim_id"].as_str().unwrap();
 	assert_eq!(
 		text(&["list"]),
 		format!(
-			"{id} (team)\n    {}\n    {}\n{}\n    {}\n",
-			display(&first["paths"][0]),
-			display(&first["paths"][1]),
+			"  Active claims\n\n    {id} (team)\n      first\n      second\n\n    {}\n      third\n",
 			next["claim_id"].as_str().unwrap(),
-			display(&next["paths"][0])
 		)
 	);
-	assert_eq!(text(&["unclaim", id]), format!("Released claim {id}.\n"));
+	assert_eq!(text(&["unclaim", id]), format!("  Released claim · {id}\n"));
 	assert_eq!(
 		text(&["unclaim", id]),
-		format!("Claim {id} is already absent.\n")
+		format!("  Claim already absent · {id}\n")
 	);
 }
 
@@ -188,17 +184,34 @@ fn terminal_escapes_control_characters_and_json_retains_the_supplied_values() {
 	let output = command(root).arg("list").output().unwrap();
 	assert!(output.status.success());
 	let displayed = String::from_utf8(output.stdout).unwrap();
-	assert_eq!(displayed.lines().count(), 2);
+	assert_eq!(displayed.lines().count(), 4);
 	assert!(displayed.contains(r"(team\nother)"));
 	assert!(displayed.contains(r"file\nother"));
 	assert_eq!(cli(root, &["list"], 0)["claims"][0], claim);
+
+	let checked = command(root).args(["check", filename]).output().unwrap();
+	assert!(checked.status.success());
+	let displayed = String::from_utf8(checked.stdout).unwrap();
+	assert_eq!(displayed.lines().count(), 2);
+	assert!(displayed.contains(r"(team\nother)"));
+	assert!(displayed.contains(r"file\nother"));
+
+	let rejected = command(root)
+		.args(["claim", "--reserve", filename])
+		.output()
+		.unwrap();
+	assert!(!rejected.status.success());
+	let displayed = String::from_utf8(rejected.stderr).unwrap();
+	assert_eq!(displayed.lines().count(), 2);
+	assert!(displayed.contains(r"(team\nother)"));
+	assert!(displayed.contains(r"file\nother"));
 
 	let id = "absent\x1b[2J";
 	let output = command(root).args(["unclaim", id]).output().unwrap();
 	assert!(output.status.success());
 	assert_eq!(
 		String::from_utf8(output.stdout).unwrap(),
-		"Claim absent\\u{1b}[2J is already absent.\n"
+		"  Claim already absent · absent\\u{1b}[2J\n"
 	);
 	assert_eq!(cli(root, &["unclaim", id], 0)["claim_id"], id);
 }

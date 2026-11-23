@@ -12,13 +12,19 @@ use trine::{
 
 /// Select completion, stdio serving or a command-line action from native arguments.
 pub fn run(mut args: Vec<OsString>) -> Result<u8, Box<dyn Error>> {
-	let app = actions::application()?;
+	let mut app = actions::application()?;
 	let output = CliViewContext::default();
+
 	if trine::cli::completion::requested() {
 		let bytes = completion::reply(command(&app), args);
 		output.stdout.write_all(&bytes)?;
 		return Ok(0);
 	}
+
+	if output.stdout.is_terminal() {
+		app.cli_heading(actions::heading(&output.stdout));
+	}
+
 	if args.len() == 1 {
 		args.push("--help".into());
 	}

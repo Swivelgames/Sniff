@@ -7,6 +7,8 @@ mod list;
 mod terminal;
 mod unclaim;
 
+pub(crate) use terminal::heading;
+
 use serde::{Serialize, de::DeserializeOwned};
 use terminal::{HumanOutput, Terminal};
 use trine::{
@@ -26,6 +28,7 @@ pub fn application() -> Result<Application, RegistrationError> {
 	app.register(claim::entry()?)?;
 	app.register(list::entry()?)?;
 	app.register(unclaim::entry()?)?;
+
 	Ok(app)
 }
 
@@ -36,6 +39,7 @@ where
 	E: HumanOutput + Serialize + Sync + Send + 'static,
 {
 	let cli = CliBinding::new(bindings).capacity(None);
+
 	Entry::new(action)
 		.cli(
 			cli,

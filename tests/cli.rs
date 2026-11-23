@@ -431,9 +431,16 @@ fn human_mode_sends_facts_to_stdout_and_refusals_to_stderr() {
 		assert!(stdout.is_empty(), "{stdout}");
 		stderr
 	};
-	assert!(human(&["thing"], 1).contains("Undetermined"));
-	assert!(human(&["init"], 0).contains("Workspace ready"));
-	assert!(human(&["thing"], 0).contains("Clear"));
+	assert_eq!(
+		human(&["thing"], 1),
+		"  Undetermined\n    No Sniff workspace found.\n    .\n\n  From the intended workspace directory, run\n    sniff init\n"
+	);
+	assert!(human(&["init"], 0).starts_with("  Workspace ready · .\n\n"));
+	assert_eq!(human(&["thing"], 0), "  Clear · thing\n");
+
+	let missing = human(&["claim", "new-parent/thing"], 1);
+	assert!(missing.contains("    new-parent/thing\n\n"));
+	assert!(missing.contains("    sniff claim --reserve <path>\n"));
 
 	let created = human(&["claim", "--reserve", "thing", "--owner", "writer"], 0);
 	let checked = cli(root, &["thing"], 0);

@@ -1,6 +1,9 @@
 //! Initialize a workspace and return its resolved coordination root.
 
-use super::{SniffEntry, interfaces, terminal::HumanOutput};
+use super::{
+	SniffEntry, interfaces,
+	terminal::{HumanOutput, Render, Tone},
+};
 use crate::{paths, problem::Problem, store::Store};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -20,8 +23,10 @@ pub(super) struct Ready {
 }
 
 impl HumanOutput for Ready {
-	fn text(&self) -> String {
-		format!("Workspace ready at {}", self.workspace.as_path().display())
+	fn render(&self, output: &mut Render) {
+		let workspace = output.path(self.workspace.as_path());
+		output.status("Workspace ready", Tone::Success, Some(&workspace));
+		output.advice("Check a path from your workspace", "sniff check <path>");
 	}
 }
 

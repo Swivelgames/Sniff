@@ -6,6 +6,9 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/Swivelgames/Swiss"
 publish = ["crates-io"]
 description = "Cooperative file and directory claims"
+keywords = ["file-claims", "agent-coordination", "filesystem", "mcp", "cli"]
+categories = ["command-line-utilities", "development-tools", "filesystem"]
+exclude = ["/.github/social-preview.jpg"]
 
 [dependencies]
 atomicwrites = "0.4"

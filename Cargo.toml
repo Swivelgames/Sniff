@@ -1,10 +1,10 @@
 [package]
-name = "sniff"
+name = "swiss"
 version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/Swivelgames/Sniff"
-publish = false
+repository = "https://github.com/Swivelgames/Swiss"
+publish = ["crates-io"]
 description = "Cooperative file and directory claims"
 
 [dependencies]
@@ -16,7 +16,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 smol = "2"
 tempfile = "3"
-trine = { git = "https://github.com/Swivelgames/trine.git", rev = "92ca868ee7fd595bc30d439a7baccb5126fd56aa" }
+trine = "0.0.2"
 uuid = { version = "1", features = ["v4"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]

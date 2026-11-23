@@ -48,7 +48,7 @@ fn simultaneous_multi_path_requests_publish_exactly_one_complete_claim() {
 	let gate = fs::File::options()
 		.read(true)
 		.write(true)
-		.open(root.join(".sniff/store.lock"))
+		.open(root.join(".swiss/store.lock"))
 		.unwrap();
 	gate.lock().unwrap();
 	let requests = [("future", "first-extra"), ("future/child", "second-extra")];
@@ -90,7 +90,7 @@ fn simultaneous_multi_path_requests_publish_exactly_one_complete_claim() {
 fn extensions_preserve_identity_and_reject_a_whole_invalid_batch() {
 	let fixture = tempdir().unwrap();
 	let root = fixture.path();
-	let record = root.join(".sniff/claims.json");
+	let record = root.join(".swiss/claims.json");
 	cli(root, &["init"], 0);
 	fs::write(root.join("existing"), "").unwrap();
 	let original = cli(
@@ -164,7 +164,7 @@ fn workspace_selection_is_exact_and_independent_from_target_paths() {
 	let result = cli(&child, &["missing"], 1);
 	assert_eq!(result["status"], "undetermined");
 	assert_eq!(result["problem"]["code"], "workspace_not_found");
-	assert!(!child.join(".sniff").exists());
+	assert!(!child.join(".swiss").exists());
 
 	cli(parent, &["init"], 0);
 	cli(&child, &["claim", "--reserve", "../external"], 0);
@@ -187,7 +187,7 @@ fn corrupt_store_reports_uncertainty_and_is_preserved_on_reinit() {
 	let fixture = tempdir().unwrap();
 	let root = fixture.path();
 	cli(root, &["init"], 0);
-	let state = root.join(".sniff/claims.json");
+	let state = root.join(".swiss/claims.json");
 	for invalid in [
 		"{",
 		r#"{"version":2,"claims":[]}"#,
@@ -230,7 +230,7 @@ fn resolved_alias_is_stable_and_unresolved_aliases_refuse_the_entire_request() {
 	assert_eq!(cli(root, &["alias/future"], 0)["status"], "clear");
 	assert_eq!(cli(root, &["first/future"], 0)["status"], "claimed");
 
-	let record = root.join(".sniff/claims.json");
+	let record = root.join(".swiss/claims.json");
 	let before = fs::read(&record).unwrap();
 	for (name, dest) in [("dangling", "missing-target"), ("loop", "loop")] {
 		symlink(dest, root.join(name)).unwrap();
@@ -278,7 +278,7 @@ fn unreadable_store_and_inaccessible_path_report_uncertainty() {
 	}
 	fs::set_permissions(&dir, fs::Permissions::from_mode(0o700)).unwrap();
 
-	let record = root.join(".sniff/claims.json");
+	let record = root.join(".swiss/claims.json");
 	fs::set_permissions(&record, fs::Permissions::from_mode(0o000)).unwrap();
 	if fs::File::open(&record).is_err() {
 		let outcome = cli(root, &["missing"], 1);
@@ -325,7 +325,7 @@ fn failed_publication_preserves_existing_coverage() {
 	cli(root, &["init"], 0);
 	let original = cli(root, &["claim", "--reserve", "mine"], 0);
 	let id = original["claim_id"].as_str().unwrap();
-	let store = root.join(".sniff");
+	let store = root.join(".swiss");
 	let record = store.join("claims.json");
 	let before = fs::read(&record).unwrap();
 
@@ -386,7 +386,7 @@ fn valid_json_with_impossible_coverage_never_reports_clear() {
 	let fixture = tempdir().unwrap();
 	let root = fixture.path();
 	cli(root, &["init"], 0);
-	let path = root.join(".sniff/claims.json");
+	let path = root.join(".swiss/claims.json");
 	let id_a = uuid::Uuid::new_v4().to_string();
 	let id_b = uuid::Uuid::new_v4().to_string();
 	let record = |id: &str, path| json!({ "claim_id":id, "paths":[path], "owner":null });
@@ -433,14 +433,14 @@ fn human_mode_sends_facts_to_stdout_and_refusals_to_stderr() {
 	};
 	assert_eq!(
 		human(&["thing"], 1),
-		"  Undetermined\n    No Sniff workspace found.\n    .\n\n  From the intended workspace directory, run\n    sniff init\n"
+		"  Undetermined\n    No Swiss workspace found.\n    .\n\n  From the intended workspace directory, run\n    swiss init\n"
 	);
 	assert!(human(&["init"], 0).starts_with("  Workspace ready · .\n\n"));
 	assert_eq!(human(&["thing"], 0), "  Clear · thing\n");
 
 	let missing = human(&["claim", "new-parent/thing"], 1);
 	assert!(missing.contains("    new-parent/thing\n\n"));
-	assert!(missing.contains("    sniff claim --reserve <path>\n"));
+	assert!(missing.contains("    swiss claim --reserve <path>\n"));
 
 	let created = human(&["claim", "--reserve", "thing", "--owner", "writer"], 0);
 	let checked = cli(root, &["thing"], 0);

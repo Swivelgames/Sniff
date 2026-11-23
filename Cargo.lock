@@ -629,7 +629,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sniff"
+name = "swiss"
 version = "0.1.0"
 dependencies = [
  "atomicwrites",
@@ -674,8 +674,9 @@ dependencies = [
 
 [[package]]
 name = "trine"
-version = "0.0.1"
-source = "git+https://github.com/Swivelgames/trine.git?rev=92ca868ee7fd595bc30d439a7baccb5126fd56aa#92ca868ee7fd595bc30d439a7baccb5126fd56aa"
+version = "0.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f589f5fe2340e89199d4fe555dbe3a312a09c069b9f289548ac22d47de0d40c7"
 dependencies = [
  "async-channel",
  "async-io",

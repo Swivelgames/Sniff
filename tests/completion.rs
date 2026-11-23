@@ -8,7 +8,7 @@ fn candidates(root: &Path, words: &[&str], index: usize) -> Vec<String> {
 		.env("TRINE_COMPLETE", "zsh")
 		.env_remove("TRINE_COMPLETE_METADATA")
 		.env("_CLAP_COMPLETE_INDEX", index.to_string())
-		.args(["--", "sniff"])
+		.args(["--", "swiss"])
 		.args(words)
 		.output()
 		.unwrap();
@@ -69,7 +69,7 @@ fn scripts_paths_and_commands_work_before_initialization() {
 		assert_eq!(paths[0].trim_end_matches(['/', '\\']), "example dir");
 	}
 	assert!(candidates(root, &["unclaim", "abc"], 2).is_empty());
-	assert!(!root.join(".sniff").exists());
+	assert!(!root.join(".swiss").exists());
 }
 
 #[test]
@@ -132,7 +132,7 @@ fn shells_receive_claim_descriptions_separately_from_ids() {
 			.env("TRINE_COMPLETE", shell)
 			.env("TRINE_COMPLETE_METADATA", "1")
 			.env("_CLAP_COMPLETE_INDEX", "2")
-			.args(["--", "sniff", "unclaim", id])
+			.args(["--", "swiss", "unclaim", id])
 			.output()
 			.unwrap();
 		assert!(output.status.success());
@@ -156,7 +156,7 @@ fn bash_routes_shorthand_using_decoded_words_and_cursor() {
 			.env("_CLAP_COMPLETE_INDEX", cursor.to_string())
 			.env_remove("TRINE_COMPLETE_QUOTE")
 			.env_remove("TRINE_COMPLETE_WORD")
-			.args(["--", "sniff"])
+			.args(["--", "swiss"])
 			.args(words)
 			.output()
 			.unwrap();
@@ -166,8 +166,8 @@ fn bash_routes_shorthand_using_decoded_words_and_cursor() {
 	};
 
 	for (prefix, expected) in [("unc", ""), ("--work", "--workspace")] {
-		let shorthand = format!("sniff --workspace=. 'my file' {prefix}");
-		let explicit = format!("sniff --workspace=. check 'my file' {prefix}");
+		let shorthand = format!("swiss --workspace=. 'my file' {prefix}");
+		let explicit = format!("swiss --workspace=. check 'my file' {prefix}");
 		let result = query(
 			&shorthand,
 			&["--workspace", "=", ".", "my file", prefix],
@@ -188,7 +188,7 @@ fn bash_routes_shorthand_using_decoded_words_and_cursor() {
 
 	// The word under the cursor remains open, even with later words on the line.
 	fs::write(root.join("unclaimed-file"), "").unwrap();
-	let line = "sniff --workspace=. unc --json";
+	let line = "swiss --workspace=. unc --json";
 	let result = query(
 		line,
 		&["--workspace", "=", ".", "unc", "--json"],

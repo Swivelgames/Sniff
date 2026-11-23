@@ -3,8 +3,8 @@ mod support;
 use std::fs;
 use support::cli;
 
-const INSTALLED_SKILL: &str = ".agents/skills/sniff/SKILL.md";
-const BUNDLED_SKILL: &[u8] = include_bytes!("../skills/sniff/SKILL.md");
+const INSTALLED_SKILL: &str = ".agents/skills/swiss/SKILL.md";
+const BUNDLED_SKILL: &[u8] = include_bytes!("../skills/swiss/SKILL.md");
 
 #[test]
 fn init_installs_the_bundled_skill_and_preserves_local_edits() {

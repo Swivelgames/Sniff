@@ -19,12 +19,12 @@ impl Problem {
 			Code::InvalidInput | Code::ClaimNotFound | Code::Cancelled => field(&self.message),
 			Code::Conflict => "Paths overlap an existing claim.".into(),
 			Code::PathUnresolved => "Could not resolve the path.".into(),
-			Code::WorkspaceNotFound => "No Sniff workspace found.".into(),
-			Code::StoreUnavailable => "Could not access the Sniff store.".into(),
+			Code::WorkspaceNotFound => "No Swiss workspace found.".into(),
+			Code::StoreUnavailable => "Could not access the Swiss store.".into(),
 			Code::SkillInstallFailed => {
 				"Workspace is ready. Could not install the agent skill.".into()
 			}
-			Code::InvalidStore => "The Sniff store could not be read.".into(),
+			Code::InvalidStore => "The Swiss store could not be read.".into(),
 			Code::PublicationUncertain => "Could not confirm whether the claim changed.".into(),
 		};
 
@@ -50,24 +50,24 @@ impl Problem {
 
 		match self.code {
 			Code::WorkspaceNotFound => {
-				output.advice("From the intended workspace directory, run", "sniff init");
+				output.advice("From the intended workspace directory, run", "swiss init");
 			}
 			Code::PathUnresolved if self.missing_target => {
 				output.advice(
 					"Check the spelling. To claim a future path, use",
-					"sniff claim --reserve <path>",
+					"swiss claim --reserve <path>",
 				);
 			}
 			Code::PublicationUncertain => {
 				output.separate();
 				output.detail(format_args!(
-					"Before retrying, run sniff list with the same workspace selection."
+					"Before retrying, run swiss list with the same workspace selection."
 				));
 			}
 			Code::SkillInstallFailed => {
 				output.separate();
 				output.detail(format_args!(
-					"Check the skill path and rerun sniff init for the same workspace."
+					"Check the skill path and rerun swiss init for the same workspace."
 				));
 			}
 			Code::PathUnresolved | Code::StoreUnavailable | Code::InvalidStore => {

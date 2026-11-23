@@ -24,7 +24,7 @@ struct Fixture {
 impl Fixture {
 	fn new() -> Self {
 		let store = tempfile::tempdir().unwrap();
-		let base = std::env::var_os("SNIFF_PORTABILITY_DIR")
+		let base = std::env::var_os("SWISS_PORTABILITY_DIR")
 			.map(PathBuf::from)
 			.unwrap_or_else(std::env::temp_dir);
 		let target = tempfile::tempdir_in(base).unwrap();
@@ -57,7 +57,7 @@ impl Fixture {
 }
 
 // Determine expected behavior from lookup on this exact target, then remove
-// the witness before Sniff evaluates a genuinely absent suffix.
+// the witness before Swiss evaluates a genuinely absent suffix.
 fn lookup_equivalent(directory: &Path, original: &str, alternate: &str) -> bool {
 	let witness = directory.join(original);
 	fs::write(&witness, b"lookup oracle").unwrap();
@@ -180,7 +180,7 @@ fn legacy_variant_claims_remain_visible_and_individually_releasable() {
 		{"claim_id":b,"paths":[target.join("future")]}
 	]);
 	fs::write(
-		fixture.store.path().join(".sniff/claims.json"),
+		fixture.store.path().join(".swiss/claims.json"),
 		json!({"version":1,"claims":records}).to_string(),
 	)
 	.unwrap();
@@ -269,7 +269,7 @@ fn unproven_unicode_comparisons_cannot_publish_a_partial_batch() {
 	let fixture = Fixture::new();
 	let equivalent = lookup_equivalent(fixture.target.path(), "Café", "CAFÉ");
 	fixture.reserve("Café");
-	let old_state = fs::read(fixture.store.path().join(".sniff/claims.json")).unwrap();
+	let old_state = fs::read(fixture.store.path().join(".swiss/claims.json")).unwrap();
 
 	let observed = fixture.run(&["check", "CAFÉ"]);
 	if observed.status.success() {
@@ -291,13 +291,13 @@ fn unproven_unicode_comparisons_cannot_publish_a_partial_batch() {
 	let failed = fixture.call(&["claim", "separate", "--reserve", "CAFÉ"], 1);
 	assert_eq!(failed["code"], "path_unresolved");
 	assert_eq!(
-		fs::read(fixture.store.path().join(".sniff/claims.json")).unwrap(),
+		fs::read(fixture.store.path().join(".swiss/claims.json")).unwrap(),
 		old_state
 	);
 
 	// A second pre-existing claim gives a definite answer even when the first
 	// entry's spelling cannot be compared. Inspection reports the known owner.
-	let document = fixture.store.path().join(".sniff/claims.json");
+	let document = fixture.store.path().join(".swiss/claims.json");
 	let mut legacy: Value = serde_json::from_slice(&old_state).unwrap();
 	let id = uuid::Uuid::new_v4().to_string();
 	legacy["claims"]
@@ -311,15 +311,15 @@ fn unproven_unicode_comparisons_cannot_publish_a_partial_batch() {
 }
 
 #[test]
-#[ignore = "use SNIFF_PORTABILITY_DIR on a filesystem with unknown name rules and run --ignored"]
+#[ignore = "use SWISS_PORTABILITY_DIR on a filesystem with unknown name rules and run --ignored"]
 fn unknown_target_refuses_ambiguous_coverage_and_preserves_existing_claims() {
 	assert!(
-		std::env::var_os("SNIFF_PORTABILITY_DIR").is_some(),
+		std::env::var_os("SWISS_PORTABILITY_DIR").is_some(),
 		"select an unsupported target directory explicitly"
 	);
 	let fixture = Fixture::new();
 	let mine = fixture.reserve("Future");
-	let record = fixture.store.path().join(".sniff/claims.json");
+	let record = fixture.store.path().join(".swiss/claims.json");
 	let initial = fs::read(&record).unwrap();
 	for candidate in ["future/child", "other"] {
 		let check = fixture.call(&["check", candidate], 1);

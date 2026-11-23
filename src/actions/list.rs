@@ -1,7 +1,7 @@
 //! List active reservations, their owner labels and the roots each ID covers.
 
 use super::{
-	SniffEntry, interfaces,
+	SwissEntry, interfaces,
 	terminal::{HumanOutput, Render},
 };
 use crate::{claims::Claim, problem::Problem, store::Store};
@@ -47,7 +47,7 @@ fn list(input: Input) -> Result<Listing, Problem> {
 	Ok(Listing { claims })
 }
 
-pub(super) fn entry() -> Result<SniffEntry<Input, Listing, Problem>, RegistrationError> {
+pub(super) fn entry() -> Result<SwissEntry<Input, Listing, Problem>, RegistrationError> {
 	let action = Action::new("list", "List active claims and their paths", |input, _| {
 		smol::unblock(move || list(input))
 	})?;

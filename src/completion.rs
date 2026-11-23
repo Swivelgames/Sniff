@@ -99,7 +99,7 @@ fn claim_candidate(claim: Claim, root: &std::path::Path) -> Candidate {
 }
 
 fn selected_store(context: &Context) -> Option<Store> {
-	// Trine resolves fields within the action. Sniff also accepts leading selectors.
+	// Trine resolves fields within the action. Swiss also accepts leading selectors.
 	let leading = Selectors::read(&context.arguments).workspace;
 	let workspace = match (leading, context.field("workspace")) {
 		(OptionValue::Absent, OptionValue::Absent) => None,

@@ -36,7 +36,7 @@ fn release_preserves_files_and_a_stale_id_cannot_touch_the_next_owner() {
 		0,
 	);
 	assert_ne!(fresh["claim_id"], id);
-	let document = root.join(".sniff/claims.json");
+	let document = root.join(".swiss/claims.json");
 	let before = fs::read(&document).unwrap();
 
 	assert_eq!(
@@ -76,7 +76,7 @@ fn workspace_selection_and_damaged_state_apply_to_both_actions() {
 		false
 	);
 
-	fs::write(nested.join(".sniff/claims.json"), "damaged").unwrap();
+	fs::write(nested.join(".swiss/claims.json"), "damaged").unwrap();
 	for args in actions {
 		assert_eq!(cli(&nested, args, 1)["code"], "invalid_store");
 	}

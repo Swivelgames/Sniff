@@ -1,7 +1,7 @@
 //! Read coverage for one path, including a path that does not yet exist.
 
 use super::{
-	SniffEntry, interfaces,
+	SwissEntry, interfaces,
 	terminal::{HumanOutput, Render, Tone},
 };
 use crate::{
@@ -85,7 +85,7 @@ fn inspect(input: Input) -> Result<Check, Problem> {
 	Ok(Check::Claimed { path, overlaps })
 }
 
-pub(super) fn entry() -> Result<SniffEntry<Input, Check, Undetermined>, RegistrationError> {
+pub(super) fn entry() -> Result<SwissEntry<Input, Check, Undetermined>, RegistrationError> {
 	let action = Action::new(
 		"check",
 		"Check a path for overlapping claims",

@@ -25,7 +25,7 @@ fn record_spelling(fixture: &Fixture, spelling: &Path) -> String {
 	let id = uuid::Uuid::new_v4().to_string();
 	let record = json!({"version":1,"claims":[{"claim_id":id,"paths":[spelling]}]});
 	fs::write(
-		fixture.store.path().join(".sniff/claims.json"),
+		fixture.store.path().join(".swiss/claims.json"),
 		record.to_string(),
 	)
 	.unwrap();
@@ -36,7 +36,7 @@ fn record_spelling(fixture: &Fixture, spelling: &Path) -> String {
 fn materialized_short_name_and_long_name_identify_the_same_claim() {
 	let fixture = Fixture::new();
 	let target = fixture.target.path().canonicalize().unwrap();
-	let name = "A long test directory name for Sniff";
+	let name = "A long test directory name for Swiss";
 	let full = target.join(name);
 	fs::create_dir(&full).unwrap();
 

@@ -1,7 +1,7 @@
 //! Release a complete claim by ID. Repeating the release succeeds.
 
 use super::{
-	SniffEntry, interfaces,
+	SwissEntry, interfaces,
 	terminal::{HumanOutput, Render, Tone},
 };
 use crate::{problem::Problem, store::Store};
@@ -45,7 +45,7 @@ fn release(input: Input, context: InvocationContext<()>) -> Result<Release, Prob
 	})
 }
 
-pub(super) fn entry() -> Result<SniffEntry<Input, Release, Problem>, RegistrationError> {
+pub(super) fn entry() -> Result<SwissEntry<Input, Release, Problem>, RegistrationError> {
 	let action = Action::new("unclaim", "Release a claim by ID", |input, context| {
 		smol::unblock(move || release(input, context))
 	})?;

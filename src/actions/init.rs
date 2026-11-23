@@ -3,7 +3,7 @@
 mod skill;
 
 use super::{
-	SniffEntry, interfaces,
+	SwissEntry, interfaces,
 	terminal::{HumanOutput, Render, Tone},
 };
 use crate::{
@@ -32,12 +32,12 @@ impl HumanOutput for Ready {
 	fn render(&self, output: &mut Render) {
 		let workspace = output.path(self.workspace.as_path());
 		output.status("Workspace ready", Tone::Success, Some(&workspace));
-		output.advice("Check a path from your workspace", "sniff check <path>");
+		output.advice("Check a path from your workspace", "swiss check <path>");
 	}
 }
 
-pub(super) fn entry() -> Result<SniffEntry<Input, Ready, Problem>, RegistrationError> {
-	let action = Action::new("init", "Initialize a Sniff workspace", |input: Input, _| {
+pub(super) fn entry() -> Result<SwissEntry<Input, Ready, Problem>, RegistrationError> {
+	let action = Action::new("init", "Initialize a Swiss workspace", |input: Input, _| {
 		smol::unblock(move || {
 			let root = input
 				.directory
@@ -49,7 +49,7 @@ pub(super) fn entry() -> Result<SniffEntry<Input, Ready, Problem>, RegistrationE
 			skill::install(store.root()).map_err(|error| {
 				Problem::at(
 					Code::SkillInstallFailed,
-					&store.root().join(".agents/skills/sniff/SKILL.md"),
+					&store.root().join(".agents/skills/swiss/SKILL.md"),
 					error,
 				)
 			})?;

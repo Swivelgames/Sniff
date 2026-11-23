@@ -6,7 +6,7 @@ use std::{
 };
 
 pub fn command(root: &Path) -> Command {
-	let mut cmd = Command::new(env!("CARGO_BIN_EXE_sniff"));
+	let mut cmd = Command::new(env!("CARGO_BIN_EXE_swiss"));
 	cmd.current_dir(root);
 	cmd
 }

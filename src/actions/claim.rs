@@ -1,7 +1,7 @@
 //! Acquire or extend one reservation using a single store transaction.
 
 use super::{
-	SniffEntry, interfaces,
+	SwissEntry, interfaces,
 	terminal::{HumanOutput, Render, Tone},
 };
 use crate::{
@@ -53,7 +53,7 @@ fn acquire(input: Input, context: InvocationContext<()>) -> Result<Claim, Proble
 	store.claim(request, context.cancellation())
 }
 
-pub(super) fn entry() -> Result<SniffEntry<Input, Claim, Problem>, RegistrationError> {
+pub(super) fn entry() -> Result<SwissEntry<Input, Claim, Problem>, RegistrationError> {
 	let action = Action::new(
 		"claim",
 		"Reserve paths or extend an active claim",

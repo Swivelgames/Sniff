@@ -22,7 +22,7 @@ use std::{
 };
 use trine::NativePath;
 
-const MARKER: &str = ".sniff";
+const MARKER: &str = ".swiss";
 
 /// The initialized workspace marker containing the document and its persistent lock file.
 pub struct Store(PathBuf);
@@ -50,7 +50,7 @@ impl Store {
 		// Publish a complete marker. A concurrent initializer can only observe the
 		// old absence or the fully populated winner, never half-initialized state.
 		let staging = tempfile::Builder::new()
-			.prefix(".sniff-init-")
+			.prefix(".swiss-init-")
 			.tempdir_in(&root)
 			.map_err(|e| Problem::at(Code::StoreUnavailable, &root, e))?;
 		let lock = staging.path().join("store.lock");
@@ -94,7 +94,7 @@ impl Store {
 		Err(Problem::at(
 			Code::WorkspaceNotFound,
 			root,
-			"no Sniff workspace found; run sniff init",
+			"no Swiss workspace found; run swiss init",
 		))
 	}
 
@@ -104,7 +104,7 @@ impl Store {
 			Ok(_) => Err(Problem::at(
 				Code::InvalidStore,
 				&self.0,
-				"expected a .sniff directory",
+				"expected a .swiss directory",
 			)),
 			Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(false),
 			Err(e) => Err(Problem::at(Code::StoreUnavailable, &self.0, e)),

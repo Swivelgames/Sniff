@@ -78,7 +78,7 @@ fn command(app: &Application) -> Command {
 			.required(true)
 			.value_parser(["bash", "zsh", "fish", "powershell"]);
 	app.cli_command()
-		.about("Coordinate filesystem claims. Use sniff <path> to check a path.")
+		.about("Coordinate filesystem claims. Use swiss <path> to check a path.")
 		.subcommand(Command::new("rpc").about("Serve JSON-RPC on stdio"))
 		.subcommand(Command::new("mcp").about("Serve MCP tools on stdio"))
 		.subcommand(

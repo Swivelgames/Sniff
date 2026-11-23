@@ -1,4 +1,4 @@
-"""Check Sniff's human presentation with terminal and redirected output on Unix."""
+"""Check Swiss's human presentation with terminal and redirected output on Unix."""
 
 import errno
 import json
@@ -43,9 +43,9 @@ def main():
 	with tempfile.TemporaryDirectory() as root:
 		code, output = terminal(binary, root, ["check", "file"], env)
 		assert code == 1
-		assert b"\x1b[36msniff init\x1b[0m" in output
+		assert b"\x1b[36mswiss init\x1b[0m" in output
 		plain = re.sub(rb"\x1b\[[0-9;]*m", b"", output)
-		assert re.match(r"\n  🧀 Sniff \(v[^\n]+\)\n\n  Undetermined\n", plain.decode())
+		assert re.match(r"\n  🧀 Swiss \(v[^\n]+\)\n\n  Undetermined\n", plain.decode())
 
 		for settings in (dict(env, NO_COLOR="1"), dict(env, TERM="dumb")):
 			assert terminal(binary, root, ["check", "file"], settings) == (1, plain)

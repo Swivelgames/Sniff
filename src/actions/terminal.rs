@@ -113,7 +113,7 @@ impl Render {
 }
 
 pub(crate) fn heading(stream: &trine::application::Output) -> String {
-	let title = concat!("🧀 Sniff (v", env!("CARGO_PKG_VERSION"), ")");
+	let title = concat!("🧀 Swiss (v", env!("CARGO_PKG_VERSION"), ")");
 	format!(
 		"\n  {}\n",
 		Style::for_stream(stream).paint(title, Tone::Heading)

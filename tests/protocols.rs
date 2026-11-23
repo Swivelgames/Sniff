@@ -51,10 +51,11 @@ impl Connection {
 			json!({
 				"protocolVersion":"2025-11-25",
 				"capabilities":{},
-				"clientInfo":{"name":"sniff-tests","version":"1"}
+				"clientInfo":{"name":"swiss-tests","version":"1"}
 			}),
 		);
 		assert_eq!(handshake["result"]["protocolVersion"], "2025-11-25");
+		assert_eq!(handshake["result"]["serverInfo"]["name"], "swiss");
 		self.send(json!({"jsonrpc":"2.0","method":"notifications/initialized"}));
 	}
 
@@ -115,7 +116,7 @@ fn independent_hosts_observe_and_extend_the_same_cli_claim() {
 	assert_eq!(names, ["check", "claim", "init", "list", "unclaim"]);
 
 	let workspace = json!({ "directory":root });
-	let skill = root.join(".agents/skills/sniff/SKILL.md");
+	let skill = root.join(".agents/skills/swiss/SKILL.md");
 	let bundled = std::fs::read(&skill).unwrap();
 
 	std::fs::remove_file(&skill).unwrap();
@@ -217,7 +218,7 @@ fn cancelling_an_rpc_release_while_the_store_is_locked_preserves_coverage() {
 	let gate = std::fs::File::options()
 		.read(true)
 		.write(true)
-		.open(root.join(".sniff/store.lock"))
+		.open(root.join(".swiss/store.lock"))
 		.unwrap();
 	gate.lock().unwrap();
 

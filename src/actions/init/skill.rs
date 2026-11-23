@@ -7,11 +7,11 @@ use std::{
 	path::Path,
 };
 
-const SKILL: &[u8] = include_bytes!("../../../skills/sniff/SKILL.md");
+const SKILL: &[u8] = include_bytes!("../../../skills/swiss/SKILL.md");
 
 pub(super) fn install(workspace: &Path) -> io::Result<()> {
 	let mut directory = workspace.to_path_buf();
-	for name in [".agents", "skills", "sniff"] {
+	for name in [".agents", "skills", "swiss"] {
 		directory.push(name);
 		ensure_directory(&directory)?;
 	}

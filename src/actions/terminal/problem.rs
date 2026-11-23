@@ -21,6 +21,9 @@ impl Problem {
 			Code::PathUnresolved => "Could not resolve the path.".into(),
 			Code::WorkspaceNotFound => "No Sniff workspace found.".into(),
 			Code::StoreUnavailable => "Could not access the Sniff store.".into(),
+			Code::SkillInstallFailed => {
+				"Workspace is ready. Could not install the agent skill.".into()
+			}
 			Code::InvalidStore => "The Sniff store could not be read.".into(),
 			Code::PublicationUncertain => "Could not confirm whether the claim changed.".into(),
 		};
@@ -59,6 +62,12 @@ impl Problem {
 				output.separate();
 				output.detail(format_args!(
 					"Before retrying, run sniff list with the same workspace selection."
+				));
+			}
+			Code::SkillInstallFailed => {
+				output.separate();
+				output.detail(format_args!(
+					"Check the skill path and rerun sniff init for the same workspace."
 				));
 			}
 			Code::PathUnresolved | Code::StoreUnavailable | Code::InvalidStore => {

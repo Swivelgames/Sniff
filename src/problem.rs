@@ -15,6 +15,7 @@ pub enum Code {
 	PathUnresolved,
 	WorkspaceNotFound,
 	StoreUnavailable,
+	SkillInstallFailed,
 	PublicationUncertain,
 	InvalidStore,
 	ClaimNotFound,

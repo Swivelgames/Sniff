@@ -115,8 +115,16 @@ fn independent_hosts_observe_and_extend_the_same_cli_claim() {
 	assert_eq!(names, ["check", "claim", "init", "list", "unclaim"]);
 
 	let workspace = json!({ "directory":root });
+	let skill = root.join(".agents/skills/sniff/SKILL.md");
+	let bundled = std::fs::read(&skill).unwrap();
+
+	std::fs::remove_file(&skill).unwrap();
 	assert_eq!(rpc.rpc("init", workspace.clone())["result"], ready);
+	assert_eq!(std::fs::read(&skill).unwrap(), bundled);
+
+	std::fs::remove_file(&skill).unwrap();
 	assert_eq!(mcp.mcp("init", workspace)["structuredContent"], ready);
+	assert_eq!(std::fs::read(&skill).unwrap(), bundled);
 
 	let created = cli(
 		root,

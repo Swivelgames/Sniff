@@ -13,6 +13,10 @@ sniff list
 
 The claim returns an ID. Another caller checking the child sees which reservation covers it and the owner's label. A caller checking the parent sees which descendants are reserved. Checks are snapshots. Request a claim to acquire coverage.
 
+Init installs the bundled agent skill at `.agents/skills/sniff/SKILL.md`.
+Re-running init restores a missing skill and preserves any existing edits.
+If your agent does not discover that directory automatically, point it at the file.
+
 ## Commands
 
 | Command | Effect |

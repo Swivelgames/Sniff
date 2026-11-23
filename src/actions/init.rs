@@ -1,10 +1,16 @@
 //! Initialize a workspace and return its resolved coordination root.
 
+mod skill;
+
 use super::{
 	SniffEntry, interfaces,
 	terminal::{HumanOutput, Render, Tone},
 };
-use crate::{paths, problem::Problem, store::Store};
+use crate::{
+	paths,
+	problem::{Code, Problem},
+	store::Store,
+};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -37,7 +43,17 @@ pub(super) fn entry() -> Result<SniffEntry<Input, Ready, Problem>, RegistrationE
 				.directory
 				.as_ref()
 				.map_or(Path::new("."), NativePath::as_path);
+
 			let store = Store::initialize(root)?;
+
+			skill::install(store.root()).map_err(|error| {
+				Problem::at(
+					Code::SkillInstallFailed,
+					&store.root().join(".agents/skills/sniff/SKILL.md"),
+					error,
+				)
+			})?;
+
 			Ok(Ready {
 				workspace: paths::native(store.root().to_owned()),
 			})

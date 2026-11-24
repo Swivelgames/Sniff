@@ -15,16 +15,19 @@ impl Problem {
 		output: &mut Render,
 		heading: Option<&str>,
 	) {
+		let name = crate::identity::Identity::name();
 		let summary = match self.code {
 			Code::InvalidInput | Code::ClaimNotFound | Code::Cancelled => field(&self.message),
 			Code::Conflict => "Paths overlap an existing claim.".into(),
 			Code::PathUnresolved => "Could not resolve the path.".into(),
-			Code::WorkspaceNotFound => "No Swiss workspace found.".into(),
-			Code::StoreUnavailable => "Could not access the Swiss store.".into(),
+			Code::WorkspaceNotFound => {
+				format!("No {name} workspace found.")
+			}
+			Code::StoreUnavailable => format!("Could not access the {name} store."),
 			Code::SkillInstallFailed => {
 				"Workspace is ready. Could not install the agent skill.".into()
 			}
-			Code::InvalidStore => "The Swiss store could not be read.".into(),
+			Code::InvalidStore => format!("The {name} store could not be read."),
 			Code::PublicationUncertain => "Could not confirm whether the claim changed.".into(),
 		};
 

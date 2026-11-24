@@ -40,12 +40,30 @@ fn hidden_settings_survive_reinitialization_and_shape_cli_help() {
 	run(root, &["init"]);
 	assert_eq!(std::fs::read(&saved).unwrap(), original);
 
+	let init_help = run(root, &["init", "--help"]);
+	assert!(
+		init_help.contains("Initialize the Example workspace"),
+		"{init_help}"
+	);
 	let help = run(root, &["list", "--help"]);
 	assert!(help.contains("Usage: example claims list"), "{help}");
 	assert!(!help.contains("--workspace"), "{help}");
 	let result = run(root, &["list", "--json"]);
 	serde_json::from_str::<serde_json::Value>(&result).unwrap();
 	assert!(!result.contains("example claims"));
+
+	std::fs::write(root.join(".swiss/claims.json"), "invalid").unwrap();
+	let output = Command::new(env!("CARGO_BIN_EXE_swiss"))
+		.current_dir(root)
+		.arg("list")
+		.output()
+		.unwrap();
+	assert!(!output.status.success());
+	let diagnostic = String::from_utf8(output.stderr).unwrap();
+	assert!(
+		diagnostic.contains("The Example store could not be read."),
+		"{diagnostic}"
+	);
 
 	// A separate workspace in the same parent directory keeps standalone usage.
 	let other = tempfile::tempdir().unwrap();

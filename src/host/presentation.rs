@@ -69,6 +69,11 @@ pub(super) fn configure_help(command: Command) -> Command {
 		.bin_name(Identity::prefix().to_owned())
 		.mut_subcommands(|sub| {
 			let init = sub.get_name() == "init";
+			let sub = if init {
+				sub.about(format!("Initialize the {} workspace", Identity::name()))
+			} else {
+				sub
+			};
 			sub.mut_args(|arg| {
 				let hidden = match arg.get_long() {
 					Some("display-name" | "invocation-prefix") => init,

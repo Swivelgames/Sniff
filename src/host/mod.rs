@@ -23,12 +23,12 @@ pub fn run(mut args: Vec<OsString>) -> Result<u8, Box<dyn Error>> {
 		return Ok(0);
 	}
 
-	if output.stdout.is_terminal() {
-		let heading = settings
-			.and_then(|identity| identity.display_name.as_deref())
-			.map(|name| format!("\n  {name}\n"))
-			.unwrap_or_else(|| actions::heading(&output.stdout));
-		app.cli_heading(heading);
+	if output.stdout.is_terminal()
+		&& settings
+			.and_then(|identity| identity.display_name.as_ref())
+			.is_none()
+	{
+		app.cli_heading(actions::heading(&output.stdout));
 	}
 
 	if args.len() == 1 {
@@ -84,7 +84,10 @@ fn command(app: &Application) -> Command {
 			.required(true)
 			.value_parser(["bash", "zsh", "fish", "powershell"]);
 	app.cli_command()
-		.about("Coordinate filesystem claims. Use swiss <path> to check a path.")
+		.about(format!(
+			"Coordinate filesystem claims. Use {} check <path> to check a path.",
+			crate::identity::Identity::prefix()
+		))
 		.subcommand(Command::new("rpc").about("Serve JSON-RPC on stdio"))
 		.subcommand(Command::new("mcp").about("Serve MCP tools on stdio"))
 		.subcommand(

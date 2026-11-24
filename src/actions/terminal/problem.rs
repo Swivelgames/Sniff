@@ -49,20 +49,27 @@ impl Problem {
 		}
 
 		match self.code {
+			Code::WorkspaceNotFound if crate::identity::Identity::managed() => {
+				output.advice("Retry to prepare the claims workspace", "list");
+			}
 			Code::WorkspaceNotFound => {
-				output.advice("From the intended workspace directory, run", "swiss init");
+				output.advice("From the intended workspace directory, run", "init");
 			}
 			Code::PathUnresolved if self.missing_target => {
 				output.advice(
 					"Check the spelling. To claim a future path, use",
-					"swiss claim --reserve <path>",
+					"claim --reserve <path>",
 				);
 			}
 			Code::PublicationUncertain => {
 				output.separate();
 				output.detail(format_args!(
-					"Before retrying, run swiss list with the same workspace selection."
+					"Before retrying, run {} list with the same workspace selection.",
+					crate::identity::Identity::prefix()
 				));
+			}
+			Code::SkillInstallFailed if crate::identity::Identity::managed() => {
+				output.advice("Check the skill path, then retry", "list");
 			}
 			Code::SkillInstallFailed => {
 				output.separate();

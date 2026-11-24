@@ -9,6 +9,7 @@ mod actions;
 mod claims;
 mod completion;
 mod host;
+mod identity;
 mod paths;
 mod problem;
 mod selectors;

@@ -105,10 +105,12 @@ impl Render {
 		self.text.push('\n');
 	}
 
-	pub(super) fn advice(&mut self, label: &str, command: &str) {
+	pub(super) fn advice(&mut self, label: &str, invocation: &str) {
+		let command = format!("{} {invocation}", crate::identity::Identity::prefix());
+		let styled = self.style.paint(&command, Tone::Command);
 		self.separate();
 		self.heading(label);
-		self.detail(format_args!("{}", self.style.paint(command, Tone::Command)));
+		self.detail(format_args!("{styled}"));
 	}
 }
 

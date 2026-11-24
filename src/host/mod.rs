@@ -1,4 +1,5 @@
 //! Host commands and the bare-path shorthand around Trine's action catalog.
+mod presentation;
 use crate::{actions, completion, selectors::Selectors};
 use clap::{Arg, Command, error::ErrorKind};
 use std::{error::Error, ffi::OsString};
@@ -13,16 +14,21 @@ use trine::{
 /// Select completion, stdio serving or a command-line action from native arguments.
 pub fn run(mut args: Vec<OsString>) -> Result<u8, Box<dyn Error>> {
 	let mut app = actions::application()?;
+	let settings = presentation::load(&app, &args)?;
 	let output = CliViewContext::default();
 
 	if trine::cli::completion::requested() {
-		let bytes = completion::reply(command(&app), args);
+		let bytes = completion::reply(presentation::configure_help(command(&app)), args);
 		output.stdout.write_all(&bytes)?;
 		return Ok(0);
 	}
 
 	if output.stdout.is_terminal() {
-		app.cli_heading(actions::heading(&output.stdout));
+		let heading = settings
+			.and_then(|identity| identity.display_name.as_deref())
+			.map(|name| format!("\n  {name}\n"))
+			.unwrap_or_else(|| actions::heading(&output.stdout));
+		app.cli_heading(heading);
 	}
 
 	if args.len() == 1 {
@@ -43,7 +49,7 @@ fn run_host(
 	args: &[OsString],
 	output: &CliViewContext,
 ) -> Result<u8, Box<dyn Error>> {
-	let mut command = command(app);
+	let mut command = presentation::configure_help(command(app));
 	let matches = match command.clone().try_get_matches_from(args) {
 		Ok(matches) => matches,
 		Err(error)
@@ -108,6 +114,18 @@ fn run_action(
 	output: CliViewContext,
 ) -> Result<u8, Box<dyn Error>> {
 	let json = json_requested(&args);
+	if args
+		.iter()
+		.take_while(|arg| *arg != "--")
+		.any(|arg| arg == "--help" || arg == "-h")
+		&& let Err(error) = presentation::configure_help(command(app)).try_get_matches_from(&args)
+		&& error.kind() == ErrorKind::DisplayHelp
+	{
+		output.stdout.write_all(error.to_string().as_bytes())?;
+		return Ok(0);
+	}
+	let mut args = args;
+	args[0] = crate::identity::Identity::prefix().into();
 	let parsed = match app.parse_cli(args) {
 		Ok(parsed) => parsed,
 		Err(error) if json => {
